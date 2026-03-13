@@ -10,7 +10,8 @@ import { useUser } from '@/lib/user-context'
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('my-dashboard')
   const { currentUser, isLoading } = useUser()
-  const isAdmin = currentUser?.role === 'super_admin'
+  const role = (currentUser?.role ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+  const isAdmin = role === 'super_admin' || role === 'superadmin' || role === 'company_admin' || role === 'companyadmin'
   const currentUserName = currentUser?.name ?? ''
   const currentUserId = currentUser?.id ?? ''
 

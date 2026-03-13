@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { AlertTriangle } from "lucide-react"
+import { useBrand } from "@/lib/brand-context"
 
 interface TeamMemberPerformance {
   id: string
@@ -19,12 +20,19 @@ interface TeamMemberPerformance {
 }
 
 export function TeamPerformanceScorecard() {
+  const { currentBrand } = useBrand()
+
+  const activeBrandLabel = currentBrand
+    .split("-")
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ")
+
   const teamPerformance: TeamMemberPerformance[] = [
     {
       id: "1",
       name: "Sarah Chen",
       role: "Marketing Lead",
-      brands: ["Warrior Systems", "Story Marketing"],
+      brands: [activeBrandLabel],
       weeklyPowerMoveCompletion: 15,
       weeklyPowerMoveTarget: 18,
       completionPercentage: 83,
@@ -36,7 +44,7 @@ export function TeamPerformanceScorecard() {
       id: "2",
       name: "Mike Johnson",
       role: "Sales Director",
-      brands: ["Warrior Systems"],
+      brands: [activeBrandLabel],
       weeklyPowerMoveCompletion: 12,
       weeklyPowerMoveTarget: 15,
       completionPercentage: 80,
@@ -48,7 +56,7 @@ export function TeamPerformanceScorecard() {
       id: "3",
       name: "Emma Wilson",
       role: "Finance Manager",
-      brands: ["Warrior Systems", "Story Marketing", "Meta Gurukul"],
+      brands: [activeBrandLabel],
       weeklyPowerMoveCompletion: 8,
       weeklyPowerMoveTarget: 12,
       completionPercentage: 67,
@@ -60,7 +68,7 @@ export function TeamPerformanceScorecard() {
       id: "4",
       name: "Priya Kumar",
       role: "Course Creator",
-      brands: ["Meta Gurukul"],
+      brands: [activeBrandLabel],
       weeklyPowerMoveCompletion: 2,
       weeklyPowerMoveTarget: 8,
       completionPercentage: 25,
@@ -72,7 +80,7 @@ export function TeamPerformanceScorecard() {
       id: "5",
       name: "John Doe",
       role: "CEO & Founder",
-      brands: ["Warrior Systems", "Story Marketing", "Meta Gurukul"],
+      brands: [activeBrandLabel],
       weeklyPowerMoveCompletion: 10,
       weeklyPowerMoveTarget: 20,
       completionPercentage: 50,
@@ -84,7 +92,7 @@ export function TeamPerformanceScorecard() {
       id: "6",
       name: "Amit Sharma",
       role: "COO",
-      brands: ["Warrior Systems", "Story Marketing"],
+      brands: [activeBrandLabel],
       weeklyPowerMoveCompletion: 14,
       weeklyPowerMoveTarget: 18,
       completionPercentage: 78,

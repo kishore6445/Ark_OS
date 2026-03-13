@@ -259,7 +259,7 @@ export function WarDashboard() {
     }>
   >([])
   const [powerMovesError, setPowerMovesError] = useState<string | null>(null)
-  const { currentBrand } = useBrand()
+  const { currentBrand, brandConfig } = useBrand()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -464,7 +464,7 @@ export function WarDashboard() {
                     {companyWIG.label}
                   </span>
                 </div>
-                <h1 className="text-3xl lg:text-4xl font-black text-stone-900 tracking-tight">The Warrior Systems</h1>
+                <h1 className="text-3xl lg:text-4xl font-black text-stone-900 tracking-tight">{brandConfig.name}</h1>
                 <p className="text-lg text-stone-800 font-semibold">
                   Add {companyWIG.target} Clients {selectedQuarter === "Annual" ? "this year" : `in ${selectedQuarter}`}
                 </p>

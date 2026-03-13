@@ -7,7 +7,6 @@ type AssignmentRow = {
   brand_id: string
   created_at: string | null
   users: { name: string; email: string } | { name: string; email: string }[] | null
-  brands: { name: string; slug: string } | { name: string; slug: string }[] | null
 }
 
 type UserRow = {
@@ -16,15 +15,16 @@ type UserRow = {
   email: string
 }
 
-type BrandRow = {
+type CompanyBrandRow = {
   id: string
-  name: string
-  slug: string
+  brand_name: string
+  brand_slug: string
 }
 
 type CreateAssignmentPayload = {
   userId: string
   brandId: string
+  brandName?: string
 }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -43,8 +43,8 @@ function normalizeUser(user: AssignmentRow["users"]) {
   return Array.isArray(user) ? user[0] : user
 }
 
-function normalizeBrand(brand: AssignmentRow["brands"]) {
-  return Array.isArray(brand) ? brand[0] : brand
+function normalizeBrandKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "")
 }
 
 async function hydrateAssignments(
@@ -56,13 +56,10 @@ async function hydrateAssignments(
 
   rows.forEach((row) => {
     const user = normalizeUser(row.users)
-    const brand = normalizeBrand(row.brands)
     if (!user?.name || !user?.email) {
       userIds.add(row.user_id)
     }
-    if (!brand?.name || !brand?.slug) {
-      brandIds.add(row.brand_id)
-    }
+    brandIds.add(row.brand_id)
   })
 
   const [userResult, brandResult] = await Promise.all([
@@ -70,8 +67,8 @@ async function hydrateAssignments(
       ? supabase.from("users").select("id, name, email").in("id", Array.from(userIds))
       : Promise.resolve({ data: [] as UserRow[], error: null }),
     brandIds.size > 0
-      ? supabase.from("brands").select("id, name, slug").in("id", Array.from(brandIds))
-      : Promise.resolve({ data: [] as BrandRow[], error: null }),
+      ? supabase.from("company_brands").select("id, brand_name, brand_slug").in("id", Array.from(brandIds))
+      : Promise.resolve({ data: [] as CompanyBrandRow[], error: null }),
   ])
 
   const userMap = new Map((userResult.data || []).map((user) => [user.id, user]))
@@ -79,17 +76,16 @@ async function hydrateAssignments(
 
   return rows.map((row) => {
     const joinedUser = normalizeUser(row.users)
-    const joinedBrand = normalizeBrand(row.brands)
     const user = joinedUser?.name && joinedUser?.email ? joinedUser : userMap.get(row.user_id)
-    const brand = joinedBrand?.name && joinedBrand?.slug ? joinedBrand : brandMap.get(row.brand_id)
+    const brand = brandMap.get(row.brand_id)
 
     return {
       id: row.id,
       userId: row.user_id,
       userName: user?.name || "",
       userEmail: user?.email || "",
-      brandId: brand?.slug || "",
-      brandName: brand?.name || "",
+      brandId: brand?.brand_slug || "",
+      brandName: brand?.brand_name || "",
       departments: [],
       createdAt: row.created_at ? new Date(row.created_at).toISOString().split("T")[0] : "",
     }
@@ -102,7 +98,7 @@ export async function GET() {
 
     const { data, error } = await supabase
       .from("user_brand_access")
-      .select("id, user_id, brand_id, created_at, users(name, email), brands(name, slug)")
+      .select("id, user_id, brand_id, created_at, users(name, email)")
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -120,31 +116,87 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as CreateAssignmentPayload
+    const requestedBrandSlug = (payload?.brandId || "").trim().toLowerCase()
+    const requestedBrandName = (payload?.brandName || "").trim().toLowerCase()
+    const requestedBrandKey = normalizeBrandKey(requestedBrandSlug || requestedBrandName)
 
-    if (!payload?.userId || !payload?.brandId) {
+    if (!payload?.userId || !requestedBrandKey) {
       return NextResponse.json({ error: "User and brand are required." }, { status: 400 })
     }
 
     const supabase = getAdminClient()
 
-    const { data: brand, error: brandError } = await supabase
-      .from("brands")
-      .select("id, name, slug")
-      .eq("slug", payload.brandId)
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", payload.userId)
       .maybeSingle()
 
-    if (brandError || !brand) {
-      return NextResponse.json({ error: brandError?.message || "Brand not found." }, { status: 400 })
+    if (userError || !user) {
+      return NextResponse.json({ error: userError?.message || "User not found." }, { status: 400 })
     }
 
+    const { data: brandRows, error: brandError } = await supabase
+      .from("company_brands")
+      .select("id, brand_name, brand_slug")
+      .order("brand_name", { ascending: true })
+
+    const brand = (brandRows || []).find(
+      (row) =>
+        normalizeBrandKey(String(row.brand_slug)) === requestedBrandKey ||
+        normalizeBrandKey(String(row.brand_name)) === requestedBrandKey,
+    )
+
+    if (brandError || !brand) {
+      return NextResponse.json(
+        {
+          error: brandError?.message || "Brand not found in company_brands table.",
+          details: { requestedBrandSlug, requestedBrandName, requestedBrandKey },
+        },
+        { status: 400 },
+      )
+    }
+
+    const { data: existing, error: existingError } = await supabase
+      .from("user_brand_access")
+      .select("id, user_id, brand_id, created_at, users(name, email)")
+      .eq("user_id", payload.userId)
+      .eq("brand_id", brand.id)
+      .maybeSingle()
+
+    if (existingError) {
+      return NextResponse.json({ error: existingError.message }, { status: 400 })
+    }
+
+    if (existing) {
+      const [assignment] = await hydrateAssignments(supabase, [existing as AssignmentRow])
+      return NextResponse.json({ assignment, alreadyExists: true }, { status: 200 })
+    }
+
+    debugger
+    // Breakpoint before writing to DB so request payload and resolved brand can be inspected.
     const { data, error } = await supabase
       .from("user_brand_access")
       .insert({ user_id: payload.userId, brand_id: brand.id })
-      .select("id, user_id, brand_id, created_at, users(name, email), brands(name, slug)")
+      .select("id, user_id, brand_id, created_at, users(name, email)")
       .single()
 
+    // Breakpoint after DB write to inspect Supabase response/error.
+    debugger
+
     if (error || !data) {
-      return NextResponse.json({ error: error?.message || "Unable to assign brand." }, { status: 400 })
+      return NextResponse.json(
+        {
+          error: error?.message || "Unable to assign brand.",
+          details: {
+            code: error?.code,
+            userId: payload.userId,
+            resolvedBrandId: brand.id,
+            resolvedBrandSlug: brand.brand_slug,
+          },
+        },
+        { status: 400 },
+      )
     }
 
     const [assignment] = await hydrateAssignments(supabase, [data as AssignmentRow])
@@ -167,7 +219,7 @@ export async function PUT(request: Request) {
 
     const { data, error } = await supabase
       .from("user_brand_access")
-      .select("id, user_id, brand_id, created_at, users(name, email), brands(name, slug)")
+      .select("id, user_id, brand_id, created_at, users(name, email)")
       .eq("id", payload.id)
       .single()
 

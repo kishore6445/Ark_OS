@@ -17,6 +17,21 @@ function normalizeJoined<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] : value
 }
 
+async function getCompanyBrandSlugs(supabase: ReturnType<typeof getAdminClient>, companyId: string) {
+  const { data: slugRows, error: slugError } = await supabase
+    .from("company_brands")
+    .select("brand_slug")
+    .eq("company_id", companyId)
+
+  if (slugError) {
+    throw slugError
+  }
+
+  return (slugRows || [])
+    .map((row) => row.brand_slug)
+    .filter((slug): slug is string => Boolean(slug))
+}
+
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("authorization") || ""
@@ -37,7 +52,7 @@ export async function GET(request: Request) {
 
     const { data: profile, error: profileError } = await supabase
       .from("users")
-      .select("id, name, email, role, avatar_url")
+      .select("id, name, email, role, avatar_url, company_id")
       .eq("id", userId)
       .single()
 
@@ -47,7 +62,7 @@ export async function GET(request: Request) {
 
     const { data: brandAccess, error: brandError } = await supabase
       .from("user_brand_access")
-      .select("brands(slug)")
+      .select("company_brands(brand_slug)")
       .eq("user_id", userId)
 
     if (brandError) {
@@ -64,7 +79,7 @@ export async function GET(request: Request) {
     }
 
     const brands = (brandAccess || [])
-      .map((row) => normalizeJoined(row.brands)?.slug)
+      .map((row) => normalizeJoined(row.company_brands)?.brand_slug)
       .filter(Boolean)
 
     const departments = (departmentAccess || [])
@@ -75,6 +90,13 @@ export async function GET(request: Request) {
       departments.map((department) => ({ brand, department })),
     )
 
+    const companyBrandSlugs =
+      profile.role === "company_admin" && profile.company_id
+        ? await getCompanyBrandSlugs(supabase, profile.company_id)
+        : []
+
+    console.log("[api/me] profile role=", profile.role)
+
     return NextResponse.json(
       {
         user: {
@@ -83,7 +105,9 @@ export async function GET(request: Request) {
           email: profile.email,
           avatar: profile.avatar_url || undefined,
           role: profile.role,
+          company_id: profile.company_id || null,
           assignments,
+          company_brand_slugs: companyBrandSlugs,
         },
       },
       { status: 200 },

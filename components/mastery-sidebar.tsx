@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   Megaphone,
@@ -58,9 +58,22 @@ export function MasterySidebar({ defaultCollapsed = false }: MasterySidebarProps
   const navRef = useRef<HTMLElement>(null)
   const { brandConfig } = useBrand()
   const { currentUser } = useUser()
+  const router = useRouter()
 
+
+  console.log("[MasterySidebar] currentUser=", currentUser);
   const currentUserRole = currentUser?.role ?? ""
-  const isAdmin = currentUserRole === "super_admin"
+  
+  console.log("[MasterySidebar] currentUserRole=", currentUserRole);
+  const normalizedCurrentUserRole = currentUserRole.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+  const isAdmin =
+    normalizedCurrentUserRole === "super_admin" ||
+    normalizedCurrentUserRole === "superadmin" ||
+    normalizedCurrentUserRole === "company_admin" ||
+    normalizedCurrentUserRole === "companyadmin"
+
+  // debug logging for admin detection and currentUser
+  console.log("[MasterySidebar] role=", currentUserRole, "normalized=", normalizedCurrentUserRole, "isAdmin=", isAdmin)
 
   const departmentKeyMap: Record<string, Department> = {
     marketing: "marketing",
@@ -73,9 +86,14 @@ export function MasterySidebar({ defaultCollapsed = false }: MasterySidebarProps
   }
 
   const visibleMasteryNav = useMemo(() => {
-    if (!currentUser || isAdmin) return masteryNav
-    const allowed = new Set(currentUser.assignments.map((assignment) => assignment.department))
-    return masteryNav.filter((item) => allowed.has(departmentKeyMap[item.key]))
+    const nav = !currentUser || isAdmin
+      ? masteryNav
+      : masteryNav.filter((item) => {
+          const allowed = new Set(currentUser.assignments.map((assignment) => assignment.department))
+          return allowed.has(departmentKeyMap[item.key])
+        })
+    console.log("[MasterySidebar] visible nav items:", nav.map(i => i.key))
+    return nav
   }, [currentUser, isAdmin])
 
   useEffect(() => {
@@ -277,7 +295,7 @@ export function MasterySidebar({ defaultCollapsed = false }: MasterySidebarProps
         {/* Footer Navigation */}
         <div className={cn("space-y-1 px-3", collapsed && "px-2")}>
           {footerNav
-            .filter((item) => (item.key === "admin" ? currentUserRole === "super_admin" : true))
+            .filter((item) => (item.key === "admin" ? isAdmin : true))
             .map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
@@ -297,8 +315,14 @@ export function MasterySidebar({ defaultCollapsed = false }: MasterySidebarProps
                         collapsed && "justify-center px-2",
                       )}
                     >
-                      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      {collapsed ? (
+                        <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      ) : (
+                        <>
+                          <span className="truncate flex-1">{item.label}</span>
+                          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        </>
+                      )}
                     </Link>
                   </TooltipTrigger>
                   {collapsed && <TooltipContent side="right">{item.label}</TooltipContent>}
@@ -324,7 +348,7 @@ export function MasterySidebar({ defaultCollapsed = false }: MasterySidebarProps
               <p className="text-xs text-gray-500 truncate">{currentUserRole || "Member"}</p>
             </div>
           )}
-          {!collapsed && (
+          {!collapsed && isAdmin && (
             <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -333,6 +357,9 @@ export function MasterySidebar({ defaultCollapsed = false }: MasterySidebarProps
                     size="icon"
                     aria-label="User settings"
                     className="h-8 w-8 shrink-0 transition-all duration-150 hover:bg-gray-100 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    onClick={() => {
+                      router.push('/admin')
+                    }}
                   >
                     <Settings className="h-4 w-4 text-gray-500" aria-hidden="true" />
                   </Button>

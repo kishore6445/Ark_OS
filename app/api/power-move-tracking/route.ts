@@ -125,7 +125,7 @@ export async function GET(request: Request) {
       .in("power_move_id", ids)
 
       if(data){
-        debugger;
+        //debugger;
         console.log('data:', data);
       }  
 

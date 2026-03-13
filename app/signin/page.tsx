@@ -1,12 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/browserclient"
 
 export default function SignInPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -28,19 +27,115 @@ export default function SignInPage() {
     }
   }, [searchParams])
 
+  // now returns the raw session object along with access token
+  const signInViaServer = async (): Promise<{ accessToken: string; session: any }> => {
+    const fallbackResponse = await fetch("/api/auth/signin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    })
+
+    const fallbackResult = await fallbackResponse.json().catch(() => null)
+    console.log("[signin] server result", fallbackResult)
+
+    if (!fallbackResponse.ok) {
+      throw new Error(
+        fallbackResult?.error || "Authentication service is unreachable. Please check your network and try again.",
+      )
+    }
+
+    const accessToken =
+      (typeof fallbackResult?.accessToken === "string" && fallbackResult.accessToken) ||
+      (typeof fallbackResult?.access_token === "string" && fallbackResult.access_token) ||
+      (typeof fallbackResult?.session?.access_token === "string" && fallbackResult.session.access_token) ||
+      null
+
+    if (!accessToken) {
+      throw new Error("Authentication succeeded but no session token was returned.")
+    }
+
+    return { accessToken, session: fallbackResult.session || fallbackResult }
+  }
+
+  const completeSignIn = async (accessToken: string, sessionObj: any) => {
+    try {
+      console.log("[signin] setting sessionObj", sessionObj)
+      // additionally set the session on the Supabase client so getSession() works
+      try {
+        console.log("[signin] cookies before setSession", document.cookie)
+        const { data: setData, error: setError } = await supabase.auth.setSession(sessionObj)
+        console.log("[signin] supabase.setSession returned", setData, setError)
+        console.log("[signin] cookies after setSession", document.cookie)
+      } catch (err) {
+        console.warn("Unable to set supabase client session", err)
+      }
+
+      const sessionResponse = await fetch("/api/auth/session", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      if (!sessionResponse.ok) {
+        const result = await sessionResponse.json().catch(() => null)
+        setErrorMessage(result?.error || "Unable to establish secure session. Please try again.")
+        setIsLoading(false)
+        return
+      }
+
+      const targetResponse = await fetch("/api/auth/post-login-target", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      //debugger;
+
+      console.log("Post-login target response:", targetResponse)
+      if (!targetResponse.ok) {
+        const result = await targetResponse.json().catch(() => null)
+        console.log("Target response error:", result)
+        setErrorMessage(result?.error || "Unable to determine redirect path. Please try again.")
+        setIsLoading(false)
+        return
+      }
+
+      const result = await targetResponse.json().catch(() => null)
+      console.log("Post-login target result:", result)
+      console.log("User role from API:", result?.role)
+      const redirectTo = typeof result?.redirectTo === "string" ? result.redirectTo : "/dashboard"
+      console.log("Redirecting to:", redirectTo)
+      window.location.replace(redirectTo)
+    } catch {
+      setErrorMessage("Unable to complete sign in right now. Please try again.")
+      setIsLoading(false)
+    }
+  }
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setErrorMessage(null)
     setIsLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setErrorMessage(error.message)
+    let accessToken: string
+    let sessionObj: any
+
+    try {
+      const res = await signInViaServer()
+      accessToken = res.accessToken
+      sessionObj = res.session
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Authentication service is unreachable. Please check your network and try again."
+      setErrorMessage(message)
       setIsLoading(false)
       return
     }
 
-    router.push("/dashboard")
+    await completeSignIn(accessToken, sessionObj)
   }
 
   return (

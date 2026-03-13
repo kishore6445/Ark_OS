@@ -17,13 +17,15 @@ import { PowerMoveManagement } from "@/components/admin/power-move-management"
 import { AchievementTracking } from "@/components/admin/achievement-tracking"
 import { BrandAssignmentManagement } from "@/components/admin/brand-assignment-management"
 import { CompanyPerformanceAdmin } from "@/components/admin/company-performance-admin"
+import { useUser } from "@/lib/user-context"
 
 type User = {
   id: string
   name: string
   email: string
-  role: "super_admin" | "dept_admin" | "member" | "viewer"
+  role: "super_admin" | "company_admin" | "member" | "viewer"
   status: "active" | "invited" | "disabled"
+  company_id?: string | null
   departments: Array<{
     code: "M" | "A" | "S" | "T" | "E" | "R" | "Y"
     permission: "admin" | "member" | "view"
@@ -51,6 +53,7 @@ const AUDIT_LOG: Array<{
 }> = []
 
 export default function AdminPage() {
+  const { currentUser } = useUser()
   const [users, setUsers] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<string>("all")
@@ -109,6 +112,7 @@ export default function AdminPage() {
             email: userData.email,
             role: userData.role,
             status: userData.status,
+            company_id: userData.company_id ?? currentUser?.company_id ?? null,
             departments: userData.departments,
           }),
         })
@@ -126,6 +130,7 @@ export default function AdminPage() {
           email: result.user.email,
           role: result.user.role,
           status: result.user.status,
+          company_id: result.user.company_id ?? null,
           departments: result.departments || userData.departments || [],
           lastUpdated: new Date().toISOString().split("T")[0],
         }
@@ -151,7 +156,7 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto p-8">
           <Tabs defaultValue="users" className="space-y-6">
             <TabsList className="bg-gray-100">
-              <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="users">Users_test</TabsTrigger>
               <TabsTrigger value="brand-assignment">Brand Assignment</TabsTrigger>
               <TabsTrigger value="company-performance">Company Performance</TabsTrigger>
               <TabsTrigger value="victory-targets">Victory Targets</TabsTrigger>
@@ -202,7 +207,7 @@ export default function AdminPage() {
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="super_admin">Super Admin</SelectItem>
-                    <SelectItem value="dept_admin">Department Admin</SelectItem>
+                    <SelectItem value="company_admin">Company Admin</SelectItem>
                     <SelectItem value="member">Team Member</SelectItem>
                     <SelectItem value="viewer">Viewer</SelectItem>
                   </SelectContent>
@@ -247,15 +252,15 @@ export default function AdminPage() {
                             variant={
                               user.role === "super_admin"
                                 ? "default"
-                                : user.role === "dept_admin"
+                                : user.role === "company_admin"
                                   ? "secondary"
                                   : "outline"
                             }
                           >
                             {user.role === "super_admin"
                               ? "Super Admin"
-                              : user.role === "dept_admin"
-                                ? "Dept Admin"
+                              : user.role === "company_admin"
+                                ? "Company Admin"
                                 : user.role === "member"
                                   ? "Member"
                                   : "Viewer"}

@@ -39,19 +39,46 @@ type VictoryTargetOption = {
   department?: "M" | "A" | "S" | "T" | "E" | "R" | "Y"
 }
 
+type PowerMoveFormData = {
+  brandId: string
+  department: PowerMove["department"]
+  name: string
+  frequency: PowerMove["frequency"]
+  weeklyTarget: number
+  owner: string
+  ownerId?: string
+  linkedVictoryTargetId?: string
+  linkedVictoryTargetTitle: string
+}
+
+type CompanyBrand = {
+  id: string
+  brand_name: string
+  brand_slug: string
+}
+
 interface AddEditPowerMoveModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   powerMove: PowerMove | null
+  brands: CompanyBrand[]
   onSave: (data: Partial<PowerMove>) => void
 }
 
-export function AddEditPowerMoveModal({ open, onOpenChange, powerMove, onSave }: AddEditPowerMoveModalProps) {
-  const [formData, setFormData] = useState({
-    brandId: "warrior-systems" as const,
-    department: "M" as const,
+export function AddEditPowerMoveModal({
+  open,
+  onOpenChange,
+  powerMove,
+  brands,
+  onSave,
+}: AddEditPowerMoveModalProps) {
+  const getDefaultBrandId = () => brands[0]?.brand_slug || ""
+
+  const [formData, setFormData] = useState<PowerMoveFormData>({
+    brandId: getDefaultBrandId(),
+    department: "M",
     name: "",
-    frequency: "weekly" as const,
+    frequency: "weekly",
     weeklyTarget: 0,
     owner: "",
     ownerId: undefined as string | undefined,
@@ -80,7 +107,7 @@ export function AddEditPowerMoveModal({ open, onOpenChange, powerMove, onSave }:
       })
     } else {
       setFormData({
-        brandId: "warrior-systems",
+        brandId: getDefaultBrandId(),
         department: "M",
         name: "",
         frequency: "weekly",
@@ -91,7 +118,13 @@ export function AddEditPowerMoveModal({ open, onOpenChange, powerMove, onSave }:
         linkedVictoryTargetTitle: "",
       })
     }
-  }, [powerMove, open])
+  }, [powerMove, open, brands])
+
+  useEffect(() => {
+    if (!formData.brandId && brands.length > 0) {
+      setFormData((prev) => ({ ...prev, brandId: brands[0].brand_slug }))
+    }
+  }, [brands, formData.brandId])
 
   const selectedOwner = users.find((user) => user.id === formData.ownerId)
   const ownerDepartments = selectedOwner?.departments || []
@@ -161,7 +194,14 @@ export function AddEditPowerMoveModal({ open, onOpenChange, powerMove, onSave }:
 
         if (Array.isArray(result.targets)) {
           setVictoryTargets(
-            result.targets.map((target) => ({
+            result.targets.map((target: {
+              id: string
+              title: string
+              owner?: string
+              ownerId?: string
+              brandId?: string
+              department?: "M" | "A" | "S" | "T" | "E" | "R" | "Y"
+            }) => ({
               id: target.id,
               title: target.title,
               owner: target.owner,
@@ -204,9 +244,17 @@ export function AddEditPowerMoveModal({ open, onOpenChange, powerMove, onSave }:
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="warrior-systems">The Warrior Systems</SelectItem>
-                <SelectItem value="story-marketing">Story Marketing</SelectItem>
-                <SelectItem value="meta-gurukul">Meta Gurukul</SelectItem>
+                {brands.length === 0 ? (
+                  <SelectItem value="no-brands" disabled>
+                    No brands available
+                  </SelectItem>
+                ) : (
+                  brands.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.brand_slug}>
+                      {brand.brand_name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             <p className="text-sm text-gray-500">Select which brand this Power Move belongs to</p>
@@ -252,7 +300,7 @@ export function AddEditPowerMoveModal({ open, onOpenChange, powerMove, onSave }:
                   const selectedUser = users.find((user) => user.id === value)
                   setFormData({
                     ...formData,
-                    ownerId: value,
+                    ownerId: value || undefined,
                     owner: selectedUser?.name || "",
                   })
                 }}

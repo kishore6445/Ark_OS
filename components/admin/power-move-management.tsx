@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Trash2 } from "lucide-react"
 import { DepartmentChip } from "@/components/department-chip"
 import { AddEditPowerMoveModal } from "@/components/admin/add-edit-power-move-modal"
+import { supabase } from "@/lib/supabase/browserclient"
 
 type PowerMove = {
   id: string
@@ -22,8 +23,15 @@ type PowerMove = {
   linkedVictoryTargetTitle: string
 }
 
+type CompanyBrand = {
+  id: string
+  brand_name: string
+  brand_slug: string
+}
+
 export function PowerMoveManagement() {
   const [powerMoves, setPowerMoves] = useState<PowerMove[]>([])
+  const [companyBrands, setCompanyBrands] = useState<CompanyBrand[]>([])
   const [deptFilter, setDeptFilter] = useState<string>("all")
   const [brandFilter, setBrandFilter] = useState<string>("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -33,7 +41,31 @@ export function PowerMoveManagement() {
 
   useEffect(() => {
     loadPowerMoves()
+    loadCompanyBrands()
   }, [])
+
+  const loadCompanyBrands = async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData?.session?.access_token
+      const headers: Record<string, string> = {}
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`
+      }
+
+      const response = await fetch("/api/admin/company-brands", { cache: "no-store", headers })
+      const result = await response.json().catch(() => ({}))
+
+      if (!response.ok || !Array.isArray(result?.brands)) {
+        setCompanyBrands([])
+        return
+      }
+
+      setCompanyBrands(result.brands)
+    } catch {
+      setCompanyBrands([])
+    }
+  }
 
   const loadPowerMoves = async () => {
     setIsLoading(true)
@@ -170,9 +202,11 @@ export function PowerMoveManagement() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Brands</SelectItem>
-            <SelectItem value="warrior-systems">The Warrior Systems</SelectItem>
-            <SelectItem value="story-marketing">Story Marketing</SelectItem>
-            <SelectItem value="meta-gurukul">Meta Gurukul</SelectItem>
+            {companyBrands.map((brand) => (
+              <SelectItem key={brand.id} value={brand.brand_slug}>
+                {brand.brand_name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={deptFilter} onValueChange={setDeptFilter}>
@@ -264,6 +298,7 @@ export function PowerMoveManagement() {
           if (!open) setEditingPowerMove(null)
         }}
         powerMove={editingPowerMove}
+        brands={companyBrands}
         onSave={handleSavePowerMove}
       />
     </>

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { supabase } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/browserclient"
 
 function getHashParams(hash: string) {
   const trimmed = hash.startsWith("#") ? hash.slice(1) : hash
@@ -13,6 +13,22 @@ function getHashParams(hash: string) {
     error: params.get("error"),
     errorDescription: params.get("error_description"),
   }
+}
+
+async function resolvePostLoginDestination(accessToken: string) {
+  const targetResponse = await fetch("/api/auth/post-login-target", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  if (!targetResponse.ok) {
+    return "/dashboard"
+  }
+
+  const result = await targetResponse.json().catch(() => null)
+  return typeof result?.redirectTo === "string" ? result.redirectTo : "/dashboard"
 }
 
 export default function AuthCallbackPage() {
@@ -37,7 +53,16 @@ export default function AuthCallbackPage() {
           router.replace(`/signin?error=${encodeURIComponent(error.message)}`)
           return
         }
-        router.replace("/set-password")
+
+        await fetch("/api/auth/session", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${hashParams.accessToken}`,
+          },
+        })
+
+        const redirectTo = await resolvePostLoginDestination(hashParams.accessToken)
+        router.replace(redirectTo)
         return
       }
 
@@ -54,7 +79,24 @@ export default function AuthCallbackPage() {
           router.replace(`/signin?error=${encodeURIComponent(error.message)}`)
           return
         }
-        router.replace("/set-password")
+
+        const { data: sessionData } = await supabase.auth.getSession()
+        const accessToken = sessionData.session?.access_token
+
+        if (accessToken) {
+          await fetch("/api/auth/session", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+
+          const redirectTo = await resolvePostLoginDestination(accessToken)
+          router.replace(redirectTo)
+          return
+        }
+
+        router.replace("/dashboard")
         return
       } else {
         await supabase.auth.getSession()

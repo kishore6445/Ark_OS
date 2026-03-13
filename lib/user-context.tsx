@@ -2,9 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { Brand, Department } from "./brand-structure"
-import { supabase } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/browserclient"
 
-export type UserRole = "super_admin" | "dept_admin" | "member" | "viewer" | "admin"
+export type UserRole = "super_admin" | "company_admin" | "member" | "viewer" | "admin"
 
 export interface UserAssignment {
   brand: Brand
@@ -17,6 +17,8 @@ export interface User {
   email: string
   avatar?: string
   role: UserRole
+  company_id?: string | null
+  company_brand_slugs?: string[]
   assignments: UserAssignment[] // Users can be assigned to multiple brand-department combinations
 }
 
@@ -78,18 +80,24 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const loadUser = async () => {
       try {
         setIsLoading(true)
+        // attempt to grab access token from client session if available
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+        console.log("[UserProvider] supabase sessionData:", sessionData, "error:", sessionError)
+        if (!sessionData?.session) {
+          console.log("[UserProvider] no session; document.cookie=", document.cookie)
+        }
         if (sessionError) throw sessionError
 
-        const accessToken = sessionData.session?.access_token
-        if (!accessToken) {
-          if (isActive) setCurrentUser(null)
-          if (isActive) setIsLoading(false)
-          return
+        const accessToken = sessionData?.session?.access_token
+
+        // always call /api/me; if we have a bearer token, send it, otherwise rely on cookie
+        const headers: Record<string, string> = { "Content-Type": "application/json" }
+        if (accessToken) {
+          headers.Authorization = `Bearer ${accessToken}`
         }
 
         const response = await fetch("/api/me", {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers,
           cache: "no-store",
         })
 
@@ -100,9 +108,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
 
         const result = await response.json()
+        console.log("[UserProvider] /api/me result:", result)
         if (isActive) setCurrentUser(result?.user || null)
         if (isActive) setIsLoading(false)
-      } catch {
+      } catch (err) {
+        console.error("[UserProvider] loadUser error", err)
         if (isActive) setCurrentUser(null)
         if (isActive) setIsLoading(false)
       }
@@ -144,7 +154,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useUser() {
+export function  useUser() {
   const context = useContext(UserContext)
   if (context === undefined) {
     throw new Error("useUser must be used within a UserProvider")

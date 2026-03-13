@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge"
 import { Search, Plus, Edit, Trash2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AssignUserToBrandModal } from "./assign-user-to-brand-modal"
+import { useUser } from "@/lib/user-context"
+import { supabase } from "@/lib/supabase/browserclient"
 
-type BrandId = "warrior-systems" | "story-marketing" | "meta-gurukul"
+type BrandId = string
 
 type BrandAssignment = {
   id: string
@@ -37,19 +39,52 @@ type UserOption = {
 }
 
 export function BrandAssignmentManagement() {
+  const { currentUser } = useUser()
   const [assignments, setAssignments] = useState<BrandAssignment[]>([])
   const [users, setUsers] = useState<UserOption[]>([])
+  const [companyBrands, setCompanyBrands] = useState<any[]>([])
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
+  const [isLoadingBrands, setIsLoadingBrands] = useState(false)
   const [usersError, setUsersError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [brandFilter, setBrandFilter] = useState<string>("all")
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false)
   const [editingAssignment, setEditingAssignment] = useState<BrandAssignment | null>(null)
 
+  const loadCompanyBrands = async () => {
+    setIsLoadingBrands(true)
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData?.session?.access_token
+      const headers: Record<string, string> = {}
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`
+      }
+      const response = await fetch("/api/admin/company-brands", { cache: "no-store", headers })
+      const raw = await response.text()
+      const result = raw ? JSON.parse(raw) : {}
+      console.log("[BrandAssignmentManagement] API response:", { status: response.status, data: result })
+      if (response.ok && Array.isArray(result.brands)) {
+        setCompanyBrands(result.brands)
+        console.log("[BrandAssignmentManagement] Company brands loaded:", result.brands)
+      } else {
+        console.error("[BrandAssignmentManagement] Failed to fetch brands:", result.error)
+        setCompanyBrands([])
+      }
+    } catch (error) {
+      console.error("[BrandAssignmentManagement] Failed to load company brands:", error)
+      setCompanyBrands([])
+    } finally {
+      setIsLoadingBrands(false)
+    }
+  }
+
   const loadAssignments = async () => {
     const response = await fetch("/api/admin/brand-assignments", { cache: "no-store" })
+         
+
     const result = await response.json()
-   // debugger;
+
     console.log("Assigments fetched", result.assignments);
     if (response.ok && Array.isArray(result.assignments)) {
       setAssignments(result.assignments)
@@ -101,6 +136,9 @@ export function BrandAssignmentManagement() {
   useEffect(() => {
     loadAssignments()
     loadUsers()
+    // Load company brands regardless of currentUser state
+    // The API will authenticate based on session cookies/headers
+    loadCompanyBrands()
   }, [])
 
   useEffect(() => {
@@ -184,6 +222,9 @@ export function BrandAssignmentManagement() {
           loadAssignments()
         }
       } else {
+        debugger;
+        const errorBody = await response.json().catch(() => null)
+        console.error("[BrandAssignmentManagement] Failed to save assignment:", errorBody)
         loadAssignments()
       }
     }
@@ -194,12 +235,12 @@ export function BrandAssignmentManagement() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Brand & Department Assignment_124</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Brand & Department Assignment</h1>
           <p className="text-gray-600">Assign users to specific brands and departments within those brands.</p>
         </div>
         <Button onClick={() => setIsAssignModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 gap-2">
           <Plus className="w-4 h-4" />
-          Assign User to Brand_test
+          Assign User to Brand
         </Button>
       </div>
 
@@ -219,9 +260,11 @@ export function BrandAssignmentManagement() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Brands</SelectItem>
-            <SelectItem value="warrior-systems">Warrior Systems</SelectItem>
-            <SelectItem value="story-marketing">Story Marketing</SelectItem>
-            <SelectItem value="meta-gurukul">Meta Gurukul</SelectItem>
+            {companyBrands.map((brand: any) => (
+              <SelectItem key={brand.id} value={brand.brand_slug}>
+                {brand.brand_name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -332,6 +375,7 @@ export function BrandAssignmentManagement() {
           if (!open) setEditingAssignment(null)
         }}
         users={users}
+        brands={companyBrands}
         assignment={editingAssignment}
         onSave={handleSaveAssignment}
       />

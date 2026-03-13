@@ -3,7 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
-export type Brand = "warrior-systems" | "story-marketing" | "meta-gurukul"
+export type Brand = string
 
 export interface CompanyWIG {
   goal: string
@@ -21,7 +21,7 @@ export interface CompanyWIG {
 }
 
 export interface BrandConfig {
-  id: Brand
+  id: string
   name: string
   shortName: string
   color: string
@@ -29,7 +29,7 @@ export interface BrandConfig {
   companyWIG: CompanyWIG
 }
 
-export const BRANDS: Record<Brand, BrandConfig> = {
+export const BRANDS: Record<string, BrandConfig> = {
   "warrior-systems": {
     id: "warrior-systems",
     name: "The Warrior Systems",
@@ -98,8 +98,8 @@ export const BRANDS: Record<Brand, BrandConfig> = {
 }
 
 interface BrandContextType {
-  currentBrand: Brand
-  setCurrentBrand: (brand: Brand) => void
+  currentBrand: string
+  setCurrentBrand: (brand: string) => void
   brandConfig: BrandConfig
   isReady: boolean
 }
@@ -107,25 +107,47 @@ interface BrandContextType {
 const BrandContext = createContext<BrandContextType | undefined>(undefined)
 
 export function BrandProvider({ children }: { children: React.ReactNode }) {
-  const [currentBrand, setCurrentBrandState] = useState<Brand>("warrior-systems")
+  const [currentBrand, setCurrentBrandState] = useState<string>("")
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
     const saved = localStorage.getItem("arkmedis-brand")
-    if (saved && saved in BRANDS) {
-      setCurrentBrandState(saved as Brand)
+    if (saved) {
+      setCurrentBrandState(saved)
     }
   }, [])
 
-  const setCurrentBrand = (brand: Brand) => {
+  const setCurrentBrand = (brand: string) => {
     setCurrentBrandState(brand)
     if (typeof window !== "undefined") {
       localStorage.setItem("arkmedis-brand", brand)
     }
   }
 
-  const brandConfig = BRANDS[currentBrand]
+  const brandConfig: BrandConfig = BRANDS[currentBrand] ?? {
+    id: currentBrand,
+    name: currentBrand
+      .split("-")
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(" ") || "Select Brand",
+    shortName: currentBrand.split("-")[0] ?? "",
+    color: "#6b7280",
+    logo: "🏷️",
+    companyWIG: {
+      goal: "",
+      description: "",
+      deadline: "",
+      yearTarget: 0,
+      yearAchieved: 0,
+      quarters: {
+        q1: { target: 0, achieved: 0, deadline: "" },
+        q2: { target: 0, achieved: 0, deadline: "" },
+        q3: { target: 0, achieved: 0, deadline: "" },
+        q4: { target: 0, achieved: 0, deadline: "" },
+      },
+    },
+  }
 
   return (
     <BrandContext.Provider value={{ currentBrand, setCurrentBrand, brandConfig, isReady: mounted }}>
@@ -138,9 +160,28 @@ export function useBrand() {
   const context = useContext(BrandContext)
   if (!context) {
     return {
-      currentBrand: "warrior-systems" as Brand,
+      currentBrand: "",
       setCurrentBrand: () => {},
-      brandConfig: BRANDS["warrior-systems"],
+      brandConfig: {
+        id: "",
+        name: "Select Brand",
+        shortName: "",
+        color: "#6b7280",
+        logo: "🏷️",
+        companyWIG: {
+          goal: "",
+          description: "",
+          deadline: "",
+          yearTarget: 0,
+          yearAchieved: 0,
+          quarters: {
+            q1: { target: 0, achieved: 0, deadline: "" },
+            q2: { target: 0, achieved: 0, deadline: "" },
+            q3: { target: 0, achieved: 0, deadline: "" },
+            q4: { target: 0, achieved: 0, deadline: "" },
+          },
+        },
+      },
       isReady: true,
     }
   }

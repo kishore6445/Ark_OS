@@ -1,4 +1,4 @@
-export type Brand = "warrior-systems" | "story-marketing" | "meta-gurukul"
+export type Brand = string
 export type Department = "marketing" | "sales" | "accounts" | "team-tools" | "execution" | "rd" | "leadership"
 export type Quarter = "Q1" | "Q2" | "Q3" | "Q4"
 

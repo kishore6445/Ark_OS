@@ -14,12 +14,18 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 
+type CompanyBrand = {
+  id: string
+  brand_name: string
+  brand_slug: string
+}
+
 type BrandAssignment = {
   id: string
   userId: string
   userName: string
   userEmail: string
-  brandId: "warrior-systems" | "story-marketing" | "meta-gurukul"
+  brandId: string
   brandName: string
   departments: Array<{
     code: "M" | "A" | "S" | "T" | "E" | "R" | "Y"
@@ -43,14 +49,9 @@ interface AssignUserToBrandModalProps {
   onOpenChange: (open: boolean) => void
   assignment: BrandAssignment | null
   users: UserOption[]
+  brands: CompanyBrand[]
   onSave: (assignment: Partial<BrandAssignment>) => void
 }
-
-const BRANDS = [
-  { id: "warrior-systems" as const, name: "Warrior Systems" },
-  { id: "story-marketing" as const, name: "Story Marketing" },
-  { id: "meta-gurukul" as const, name: "Meta Gurukul" },
-]
 
 const DEPARTMENT_LABELS: Record<UserOption["departments"][number]["code"], string> = {
   M: "Marketing",
@@ -67,12 +68,17 @@ export function AssignUserToBrandModal({
   onOpenChange,
   assignment,
   users,
+  brands,
   onSave,
 }: AssignUserToBrandModalProps) {
   const [userId, setUserId] = useState("")
-  const [brandId, setBrandId] = useState<"warrior-systems" | "story-marketing" | "meta-gurukul">(
-    "warrior-systems",
-  )
+  const [brandId, setBrandId] = useState<string>("")
+
+  useEffect(() => {
+    if (brands.length > 0 && !brandId) {
+      setBrandId(brands[0].brand_slug)
+    }
+  }, [brands, brandId])
 
   useEffect(() => {
     if (assignment) {
@@ -85,12 +91,13 @@ export function AssignUserToBrandModal({
 
   const resetForm = () => {
     setUserId("")
-    setBrandId("warrior-systems")
+    setBrandId(brands.length > 0 ? brands[0].brand_slug : "")
   }
 
   const handleSave = () => {
+    
     const selectedUser = users.find((u) => u.id === userId)
-    const selectedBrand = BRANDS.find((b) => b.id === brandId)
+    const selectedBrand = brands.find((b) => b.brand_slug === brandId)
     
     console.log("Selected User:", selectedUser);
     console.log("Selected Brand:", selectedBrand);
@@ -102,7 +109,7 @@ export function AssignUserToBrandModal({
       userName: selectedUser.name,
       userEmail: selectedUser.email,
       brandId,
-      brandName: selectedBrand.name,
+      brandName: selectedBrand.brand_name,
       departments: selectedUser.departments.map((dept) => ({
         code: dept.code,
         name: DEPARTMENT_LABELS[dept.code],
@@ -152,16 +159,22 @@ export function AssignUserToBrandModal({
 
             <div className="space-y-2">
               <Label>Brand</Label>
-              <Select value={brandId} onValueChange={(v) => setBrandId(v as typeof brandId)} disabled={!!assignment}>
+              <Select value={brandId} onValueChange={setBrandId} disabled={!!assignment}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {BRANDS.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id}>
-                      {brand.name}
+                  {brands.length === 0 ? (
+                    <SelectItem value="no-brands" disabled>
+                      No brands available
                     </SelectItem>
-                  ))}
+                  ) : (
+                    brands.map((brand: CompanyBrand) => (
+                      <SelectItem key={brand.id} value={brand.brand_slug}>
+                        {brand.brand_name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -198,7 +211,7 @@ export function AssignUserToBrandModal({
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={!canSave} className="bg-blue-600 hover:bg-blue-700">
-            {assignment ? "Update Assignment" : "Assign to Brand_1233"}
+            {assignment ? "Update Assignment" : "Assign to Brand"}
           </Button>
         </DialogFooter>
       </DialogContent>

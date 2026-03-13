@@ -32,8 +32,9 @@ interface UserDetail {
   id: string
   name: string
   email: string
-  role: "super_admin" | "dept_admin" | "member" | "viewer"
+  role: "super_admin" | "company_admin" | "member" | "viewer"
   status: "active" | "invited" | "disabled"
+  company_id?: string | null
   departments: DepartmentAccess[]
   photo?: string
 }
@@ -368,7 +369,7 @@ export function AddEditUserModal({ open, onOpenChange, user, onSave }: AddEditUs
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="super_admin">Super Admin</SelectItem>
-                  <SelectItem value="dept_admin">Department Admin</SelectItem>
+                  <SelectItem value="company_admin">Company Admin</SelectItem>
                   <SelectItem value="member">Team Member</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>

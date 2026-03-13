@@ -20,7 +20,7 @@ CREATE TYPE department_code AS ENUM ('M', 'A', 'S', 'T', 'E', 'R', 'Y');
 
 CREATE TYPE quarter_type AS ENUM ('Q1', 'Q2', 'Q3', 'Q4');
 
-CREATE TYPE user_role AS ENUM ('super_admin', 'dept_admin', 'member', 'viewer');
+CREATE TYPE user_role AS ENUM ('super_admin', 'company_admin', 'member', 'viewer');
 
 CREATE TYPE user_status AS ENUM ('active', 'invited', 'disabled');
 
@@ -113,7 +113,7 @@ CREATE TABLE user_brand_access (
 
 CREATE TABLE victory_targets (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  brand_id UUID NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
+  brand_id UUID NOT NULL REFERENCES company_brands(id) ON DELETE CASCADE,
   department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
   name VARCHAR(500) NOT NULL,
   description TEXT,
@@ -146,7 +146,7 @@ CREATE TABLE victory_target_quarters (
 
 CREATE TABLE power_moves (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  brand_id UUID NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
+  brand_id UUID NOT NULL REFERENCES company_brands(id) ON DELETE CASCADE,
   department_id UUID NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
   linked_victory_target_id UUID REFERENCES victory_targets(id) ON DELETE SET NULL,
   name VARCHAR(500) NOT NULL,
@@ -526,7 +526,7 @@ CREATE POLICY "Users can update own power move tracking" ON power_move_tracking
       AND pm.owner_id = auth.uid()
     )
     OR EXISTS (
-      SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('super_admin', 'dept_admin')
+      SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('super_admin', 'company_admin')
     )
   );
 
@@ -549,7 +549,7 @@ CREATE POLICY "Users can update own tasks" ON tasks
   FOR UPDATE USING (
     owner_id = auth.uid()
     OR EXISTS (
-      SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('super_admin', 'dept_admin')
+      SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('super_admin', 'company_admin')
     )
   );
 
@@ -557,11 +557,11 @@ CREATE POLICY "Users can update own tasks" ON tasks
 CREATE POLICY "Users can manage own daily reports" ON daily_reports
   FOR ALL USING (user_id = auth.uid());
 
--- Clients are visible to super_admins and dept_admins only
+-- Clients are visible to super_admins and company_admins only
 CREATE POLICY "Admins can read clients" ON clients
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('super_admin', 'dept_admin')
+      SELECT 1 FROM users WHERE id = auth.uid() AND role IN ('super_admin', 'company_admin')
     )
   );
 

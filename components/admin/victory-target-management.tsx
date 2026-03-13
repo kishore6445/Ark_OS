@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Trash2 } from "lucide-react"
 import { DepartmentChip } from "@/components/department-chip"
 import { AddEditVictoryTargetModal } from "@/components/admin/add-edit-victory-target-modal"
+import { supabase } from "@/lib/supabase/browserclient"
 
 type VictoryTarget = {
   id: string
@@ -23,6 +24,12 @@ type VictoryTarget = {
   status: "on-track" | "at-risk" | "critical"
 }
 
+type CompanyBrand = {
+  id: string
+  brand_name: string
+  brand_slug: string
+}
+
 const DEPARTMENT_NAMES = {
   M: "Marketing",
   A: "Accounts/Finance",
@@ -35,6 +42,7 @@ const DEPARTMENT_NAMES = {
 
 export function VictoryTargetManagement() {
   const [targets, setTargets] = useState<VictoryTarget[]>([])
+  const [companyBrands, setCompanyBrands] = useState<CompanyBrand[]>([])
   const [deptFilter, setDeptFilter] = useState<string>("all")
   const [brandFilter, setBrandFilter] = useState<string>("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -44,7 +52,31 @@ export function VictoryTargetManagement() {
 
   useEffect(() => {
     loadTargets()
+    loadCompanyBrands()
   }, [])
+
+  const loadCompanyBrands = async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData?.session?.access_token
+      const headers: Record<string, string> = {}
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`
+      }
+
+      const response = await fetch("/api/admin/company-brands", { cache: "no-store", headers })
+      const result = await response.json().catch(() => ({}))
+
+      if (!response.ok || !Array.isArray(result?.brands)) {
+        setCompanyBrands([])
+        return
+      }
+
+      setCompanyBrands(result.brands)
+    } catch {
+      setCompanyBrands([])
+    }
+  }
 
   const loadTargets = async () => {
     setIsLoading(true)
@@ -178,9 +210,11 @@ export function VictoryTargetManagement() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Brands</SelectItem>
-            <SelectItem value="warrior-systems">The Warrior Systems</SelectItem>
-            <SelectItem value="story-marketing">Story Marketing</SelectItem>
-            <SelectItem value="meta-gurukul">Meta Gurukul</SelectItem>
+            {companyBrands.map((brand) => (
+              <SelectItem key={brand.id} value={brand.brand_slug}>
+                {brand.brand_name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -290,6 +324,7 @@ export function VictoryTargetManagement() {
           if (!open) setEditingTarget(null)
         }}
         target={editingTarget}
+        brands={companyBrands}
         onSave={handleSaveTarget}
       />
     </>

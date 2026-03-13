@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 type CreatePayload = {
-  brandId: "warrior-systems" | "story-marketing" | "meta-gurukul"
+  brandId: string
   department: "M" | "A" | "S" | "T" | "E" | "R" | "Y"
   name: string
   frequency: "daily" | "weekly" | "monthly"
@@ -31,13 +31,17 @@ function normalizeJoined<T>(value: T | T[] | null) {
   return Array.isArray(value) ? value[0] : value
 }
 
+function normalizeBrandKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "")
+}
+
 export async function GET() {
   try {
     const supabase = getAdminClient()
     const { data, error } = await supabase
       .from("power_moves")
       .select(
-        "id, name, frequency, target_per_cycle, owner_id, owner_name, linked_victory_target_id, brands(id, slug, name), departments(id, code, name), victory_targets(id, name)",
+        "id, name, frequency, target_per_cycle, owner_id, owner_name, linked_victory_target_id, company_brands(id, brand_slug, brand_name), departments(id, code, name), victory_targets(id, name)",
       )
       .order("created_at", { ascending: false })
 
@@ -46,13 +50,13 @@ export async function GET() {
     }
    // debugger;
     const powerMoves = (data || []).map((row) => {
-      const brand = normalizeJoined(row.brands)
+      const brand = normalizeJoined(row.company_brands)
       const department = normalizeJoined(row.departments)
       const linkedTarget = normalizeJoined(row.victory_targets)
 
       return {
         id: row.id,
-        brandId: brand?.slug || "",
+        brandId: brand?.brand_slug || "",
         department: department?.code || "M",
         name: row.name,
         frequency: row.frequency,
@@ -80,14 +84,19 @@ export async function POST(request: Request) {
 
     const supabase = getAdminClient()
 
-    const { data: brand, error: brandError } = await supabase
-      .from("brands")
-      .select("id")
-      .eq("slug", payload.brandId)
-      .maybeSingle()
+    const requestedBrandKey = normalizeBrandKey(payload.brandId)
+    const { data: companyBrands, error: brandError } = await supabase
+      .from("company_brands")
+      .select("id, company_id, brand_slug, brand_name")
+
+    const brand = (companyBrands || []).find(
+      (row) =>
+        normalizeBrandKey(String(row.brand_slug)) === requestedBrandKey ||
+        normalizeBrandKey(String(row.brand_name)) === requestedBrandKey,
+    )
 
     if (brandError || !brand) {
-      return NextResponse.json({ error: brandError?.message || "Brand not found." }, { status: 400 })
+      return NextResponse.json({ error: brandError?.message || "Brand not found in company_brands." }, { status: 400 })
     }
 
     const { data: department, error: deptError } = await supabase
@@ -101,6 +110,7 @@ export async function POST(request: Request) {
     }
 
     const insertRow = {
+      company_id: brand.company_id,
       brand_id: brand.id,
       department_id: department.id,
       linked_victory_target_id: payload.linkedVictoryTargetId ?? null,
@@ -135,11 +145,16 @@ export async function PUT(request: Request) {
 
     const supabase = getAdminClient()
 
-    const { data: brand } = await supabase
-      .from("brands")
-      .select("id")
-      .eq("slug", payload.brandId)
-      .maybeSingle()
+    const requestedBrandKey = normalizeBrandKey(payload.brandId)
+    const { data: companyBrands } = await supabase
+      .from("company_brands")
+      .select("id, company_id, brand_slug, brand_name")
+
+    const brand = (companyBrands || []).find(
+      (row) =>
+        normalizeBrandKey(String(row.brand_slug)) === requestedBrandKey ||
+        normalizeBrandKey(String(row.brand_name)) === requestedBrandKey,
+    )
 
     const { data: department } = await supabase
       .from("departments")
@@ -148,6 +163,7 @@ export async function PUT(request: Request) {
       .maybeSingle()
 
     const updateRow = {
+      company_id: brand?.company_id ?? undefined,
       brand_id: brand?.id ?? undefined,
       department_id: department?.id ?? undefined,
       linked_victory_target_id: payload.linkedVictoryTargetId ?? null,

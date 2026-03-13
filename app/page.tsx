@@ -18,7 +18,7 @@ export default function HomePage() {
             href="/signin"
             className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/50 hover:bg-white/5"
           >
-            Sign in
+            Sign in_test
           </Link>
           <Link
             href="/signup"

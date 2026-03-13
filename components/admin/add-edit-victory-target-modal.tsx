@@ -44,16 +44,31 @@ type UserOption = {
   departments?: Array<{ code: VictoryTarget["department"]; permission: "admin" | "member" | "view" }>
 }
 
+type CompanyBrand = {
+  id: string
+  brand_name: string
+  brand_slug: string
+}
+
 interface AddEditVictoryTargetModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   target: VictoryTarget | null
+  brands: CompanyBrand[]
   onSave: (data: Partial<VictoryTarget>) => void
 }
 
-export function AddEditVictoryTargetModal({ open, onOpenChange, target, onSave }: AddEditVictoryTargetModalProps) {
+export function AddEditVictoryTargetModal({
+  open,
+  onOpenChange,
+  target,
+  brands,
+  onSave,
+}: AddEditVictoryTargetModalProps) {
+  const getDefaultBrandId = () => brands[0]?.brand_slug || ""
+
   const [formData, setFormData] = useState<VictoryTargetFormData>({
-    brandId: "warrior-systems",
+    brandId: getDefaultBrandId(),
     department: "M",
     title: "",
     target: 0,
@@ -71,7 +86,7 @@ export function AddEditVictoryTargetModal({ open, onOpenChange, target, onSave }
   useEffect(() => {
     if (target) {
       setFormData({
-        brandId: target.brandId || "warrior-systems",
+        brandId: target.brandId || getDefaultBrandId(),
         department: target.department,
         title: target.title,
         target: target.target,
@@ -84,7 +99,7 @@ export function AddEditVictoryTargetModal({ open, onOpenChange, target, onSave }
       })
     } else {
       setFormData({
-        brandId: "warrior-systems",
+        brandId: getDefaultBrandId(),
         department: "M",
         title: "",
         target: 0,
@@ -96,7 +111,13 @@ export function AddEditVictoryTargetModal({ open, onOpenChange, target, onSave }
         status: "on-track",
       })
     }
-  }, [target, open])
+  }, [target, open, brands])
+
+  useEffect(() => {
+    if (!formData.brandId && brands.length > 0) {
+      setFormData((prev) => ({ ...prev, brandId: brands[0].brand_slug }))
+    }
+  }, [brands, formData.brandId])
 
   useEffect(() => {
     if (!open) return
@@ -159,9 +180,17 @@ export function AddEditVictoryTargetModal({ open, onOpenChange, target, onSave }
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="warrior-systems">The Warrior Systems</SelectItem>
-                <SelectItem value="story-marketing">Story Marketing</SelectItem>
-                <SelectItem value="meta-gurukul">Meta Gurukul</SelectItem>
+                {brands.length === 0 ? (
+                  <SelectItem value="no-brands" disabled>
+                    No brands available
+                  </SelectItem>
+                ) : (
+                  brands.map((brand) => (
+                    <SelectItem key={brand.id} value={brand.brand_slug}>
+                      {brand.brand_name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             <p className="text-sm text-gray-500">Select which brand this Victory Target belongs to</p>

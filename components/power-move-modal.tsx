@@ -190,7 +190,7 @@ export function PowerMoveModal({ open, onOpenChange, onSave, victoryTargets }: P
   const normalizeName = (value?: string) => value?.trim().toLowerCase() || ""
 
   const ownerFilteredTargets = victoryTargets.filter((target) => {
-    debugger;
+   // debugger;
     if (!formData.owner && !formData.ownerId) return false
     if (formData.ownerId && target.ownerId) {
       return target.ownerId === formData.ownerId

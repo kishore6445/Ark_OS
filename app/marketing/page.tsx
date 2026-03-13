@@ -10,7 +10,7 @@ import { useDepartmentPowerMoves } from "@/lib/use-department-power-moves"
 import { useDepartmentVictoryTargets } from "@/lib/use-department-victory-targets"
 
 export default function MarketingPage() {
-  const { brandConfig } = useBrand()
+  const { brandConfig, isReady: brandReady } = useBrand()
   const departmentData = useBrandDepartment("marketing")
   const {
     victoryTargets: departmentVictoryTargets,
@@ -23,7 +23,7 @@ export default function MarketingPage() {
     error: powerMovesError,
   } = useDepartmentPowerMoves("M")
 
-  if (powerMovesLoading || victoryTargetsLoading) {
+  if (!brandReady || powerMovesLoading || victoryTargetsLoading) {
     return (
       <AppShell>
         <DepartmentPageSkeleton />
@@ -31,26 +31,12 @@ export default function MarketingPage() {
     )
   }
 
-  if (!departmentData) {
-    return (
-      <AppShell>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-4">
-            <Megaphone className="h-16 w-16 mx-auto text-muted-foreground" />
-            <h2 className="text-2xl font-bold">Marketing Department</h2>
-            <p className="text-muted-foreground">No marketing data available for {brandConfig.name}</p>
-          </div>
-        </div>
-      </AppShell>
-    )
-  }
-
   const config: DepartmentConfig = {
-    name: `${brandConfig.name} - ${departmentData.name}`,
+    name: `${brandConfig.name} - ${departmentData?.name ?? "Marketing"}`,
     icon: Megaphone,
     wig: brandConfig.companyWIG.goal,
     status: "on-track",
-    coreObjective: departmentData.coreObjective,
+    coreObjective: departmentData?.coreObjective,
     victoryTargets:
       victoryTargetsLoading || victoryTargetsError
         ? []
@@ -74,10 +60,13 @@ export default function MarketingPage() {
             activityCompleted: false,
           })),
     commitments: [],
-    tasks: departmentData.tasks.map((t) => ({
-      ...t,
+    tasks: (departmentData?.tasks ?? []).map((t) => ({
+      id: t.id,
       task: t.title,
+      owner: t.owner,
       due: t.dueDate,
+      status: t.status === "completed" ? ("done" as const) : ("todo" as const),
+      priority: t.priority,
     })),
   }
 

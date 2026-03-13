@@ -9,8 +9,9 @@ type DepartmentAccess = {
 type CreateUserPayload = {
   name: string
   email: string
-  role: "super_admin" | "dept_admin" | "member" | "viewer"
+  role: "super_admin" | "company_admin" | "member" | "viewer"
   status: "active" | "invited" | "disabled"
+  company_id?: string | null
   departments?: DepartmentAccess[]
 }
 
@@ -51,6 +52,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Name and email are required." }, { status: 400 })
     }
 
+    const requiresCompany = (payload.role || "member") !== "super_admin"
+    if (requiresCompany && !payload.company_id) {
+      return NextResponse.json({ error: "company_id is required for non-super-admin users." }, { status: 400 })
+    }
+
     const supabase = getAdminClient()
 
     const requestOrigin = request.headers.get("origin") || new URL(request.url).origin
@@ -76,8 +82,9 @@ export async function POST(request: Request) {
         email: payload.email,
         role: payload.role || "member",
         status: payload.status || "invited",
+        company_id: payload.company_id ?? null,
       })
-      .select("id, name, email, role, status")
+      .select("id, name, email, role, status, company_id")
       .single()
 
     if (profileError) {
@@ -160,7 +167,7 @@ export async function GET() {
 
     const { data: users, error: usersError } = await supabase
       .from("users")
-      .select("id, name, email, role, status, updated_at, created_at")
+      .select("id, name, email, role, status, company_id, updated_at, created_at")
       .order("created_at", { ascending: false })
 
     if (usersError) {
@@ -211,6 +218,7 @@ export async function GET() {
         email: user.email,
         role: user.role,
         status: user.status,
+        company_id: user.company_id,
         departments: accessMap.get(user.id) || [],
         lastUpdated: formattedDate,
       }

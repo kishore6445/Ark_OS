@@ -14,7 +14,7 @@ import { BrandSwitcher } from "@/components/brand-switcher"
 import { UserBrandSelector } from "@/components/user-brand-selector"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { supabase } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/browserclient"
 import { useUser } from "@/lib/user-context"
 
 export const ModeContext = React.createContext<{
