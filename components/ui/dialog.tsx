@@ -54,6 +54,7 @@ function DialogContent({
           "md:top-[50%] md:left-[50%] md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-lg md:border md:p-6",
           className,
         )}
+        aria-describedby={props["aria-describedby"]}
         {...props}
       >
         {children}
