@@ -1,8 +1,7 @@
 "use client"
 import { useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, ChevronDown } from "lucide-react"
+import { Calendar, ChevronDown, Flame, CheckCircle2, AlertCircle } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -31,9 +30,7 @@ export function IndividualDashboard({
   const [victoryTargets, setVictoryTargets] = useState<any[]>([])
   const [isLoadingData, setIsLoadingData] = useState(true)
   const [isTrackingLoading, setIsTrackingLoading] = useState(true)
-  const [supportingWorkOpen, setSupportingWorkOpen] = useState(false)
   const [selectedPeriod, setSelectedPeriod] = useState<TimePeriod>("today")
-  const [linkedPowerMove, setLinkedPowerMove] = useState<string | null>(null) // Declare linkedPowerMove variable
 
   const toggleTask = (id: string) => {
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)))
@@ -298,70 +295,15 @@ export function IndividualDashboard({
     }
   }
 
-  const getScoreLabel = (period: TimePeriod) => {
-    switch (period) {
-      case "today":
-        return "DAILY SCORE"
-      case "this-week":
-        return "WEEKLY SCORE"
-      case "this-month":
-        return "MONTHLY SCORE"
-      case "this-quarter":
-        return "QUARTERLY SCORE"
-    }
-  }
-
   const getExecutionStatus = () => {
-    if (executionPercentage >= 70) return "on-standard"
-    if (executionPercentage >= 50) return "caution"
-    return "needs-help"
+    if (executionPercentage >= 70) return "on-track"
+    if (executionPercentage >= 50) return "at-risk"
+    return "needs-momentum"
   }
 
   const executionStatus = getExecutionStatus()
 
-  const getHeroStyling = () => {
-    if (executionStatus === "on-standard") {
-      return {
-        bgGradient: "from-emerald-50 via-emerald-100/80 to-emerald-50",
-        borderColor: "border-emerald-200",
-        accentColor: "border-l-emerald-500",
-        textColor: "text-emerald-900",
-        subtextColor: "text-emerald-700",
-        scoreCircleBg: "bg-emerald-500",
-        scoreCircleText: "text-white",
-        headline: "Personal execution is on standard.",
-        statusBadge: { label: "On Standard", bg: "bg-emerald-100 text-emerald-800" },
-      }
-    }
-    if (executionStatus === "caution") {
-      return {
-        bgGradient: "from-amber-50 via-amber-100/80 to-amber-50",
-        borderColor: "border-amber-200",
-        accentColor: "border-l-amber-500",
-        textColor: "text-amber-900",
-        subtextColor: "text-amber-700",
-        scoreCircleBg: "bg-amber-500",
-        scoreCircleText: "text-white",
-        headline: "Personal execution requires attention.",
-        statusBadge: { label: "Caution", bg: "bg-amber-100 text-amber-800" },
-      }
-    }
-    return {
-      bgGradient: "from-rose-50 via-rose-100/80 to-rose-50",
-      borderColor: "border-rose-200",
-      accentColor: "border-l-rose-500",
-      textColor: "text-rose-900",
-      subtextColor: "text-rose-700",
-      scoreCircleBg: "bg-rose-500",
-      scoreCircleText: "text-white",
-      headline: "Personal execution requires immediate focus.",
-      statusBadge: { label: "Needs Help", bg: "bg-rose-100 text-rose-800" },
-    }
-  }
-
-  const heroStyle = getHeroStyling()
-
-  // PATCH 1: Calculate if all today's power moves are completed for closure state
+  // Calculate today's power moves
   const todayPowerMoves = myPowerMoves.filter((pm) => {
     const { target } = getTargetActualForPeriod(pm, "today")
     return target > 0
@@ -370,26 +312,6 @@ export function IndividualDashboard({
     const { actual, target } = getTargetActualForPeriod(pm, "today")
     return actual >= target
   }).length
-  const isTodayComplete = todayCompletedCount === todayPowerMoves.length && todayPowerMoves.length > 0
-
-  // Status logic for scoreboard
-  const getStatus = () => {
-    if (executionPercentage >= 70) return { color: '#16A34A', bg: 'bg-emerald-100', text: 'text-emerald-800', badge: 'WINNING', borderAccent: 'border-emerald-500' }
-    if (executionPercentage >= 50) return { color: '#F59E0B', bg: 'bg-amber-100', text: 'text-amber-800', badge: 'AT RISK', borderAccent: 'border-amber-500' }
-    return { color: '#DC2626', bg: 'bg-rose-100', text: 'text-rose-800', badge: 'BEHIND', borderAccent: 'border-rose-500' }
-  }
-  const status = getStatus()
-
-  // Mock victory targets linked to user's power moves
-  const linkedVictoryTargets = myVictoryTargets.slice(0, 2).map((vt) => {
-    const progress = vt.target ? Math.round((vt.achieved / vt.target) * 100) : 0
-    return {
-      id: vt.id,
-      title: vt.title,
-      progress,
-      brand: vt.brandId || "",
-    }
-  })
 
   if (isLoadingData || isUserLoading || isTrackingLoading) {
     return (
@@ -400,422 +322,380 @@ export function IndividualDashboard({
   }
 
   return (
-    <section className='px-4 sm:px-6 lg:px-8 pb-8 space-y-6' aria-labelledby='personal-dashboard-heading'>
-      {/* HERO CARD - Department-style scoreboard with individual identity */}
-      <Card className='shadow-sm border border-stone-200 rounded-lg overflow-hidden'>
-        {/* SCOREBOARD HEADER - Individual Identity with Photo */}
-        <div className='px-6 py-5 bg-stone-50 border-b border-stone-200'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-4'>
-              {/* Individual Photo - Key differentiator from department */}
-              <div className='relative flex-shrink-0'>
-                <div className='h-16 w-16 rounded-full overflow-hidden border-2 border-white shadow-md bg-muted'>
-                  <Image
-                    src={displayAvatar || '/placeholder.svg'}
-                    alt={displayName}
-                    width={64}
-                    height={64}
-                    className='h-full w-full object-cover'
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                      target.parentElement?.classList.add('flex', 'items-center', 'justify-center')
-                    }}
-                  />
-                </div>
-                <div className='absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-xs font-black rounded-full h-6 w-6 flex items-center justify-center shadow-sm border border-white'>
-                  {displayStreak}
-                </div>
-              </div>
-              <div>
-                <h2 className='text-3xl font-black text-stone-900 tracking-tight'>{displayName}</h2>
-                <p className='text-sm font-semibold text-stone-600 mt-1'>
-                  {displayRole} · {displayBrands} Brands
-                </p>
-              </div>
+    <section className='px-4 sm:px-6 lg:px-8 pb-8 space-y-8' aria-labelledby='personal-dashboard-heading'>
+      {/* HERO SECTION - Premium 3-Column Execution Cockpit */}
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8'>
+        
+        {/* LEFT COLUMN - USER IDENTITY */}
+        <div className='flex flex-col items-center justify-center text-center p-8 bg-white rounded-2xl shadow-sm border border-stone-200/60 hover:shadow-md transition-shadow'>
+          {/* Large Avatar */}
+          <div className='relative mb-6'>
+            <div className='h-24 w-24 rounded-full overflow-hidden border-3 border-stone-200 shadow-md bg-stone-100'>
+              <Image
+                src={displayAvatar || '/placeholder.svg'}
+                alt={displayName}
+                width={96}
+                height={96}
+                className='h-full w-full object-cover'
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                  target.parentElement?.classList.add('flex', 'items-center', 'justify-center', 'bg-stone-100')
+                }}
+              />
             </div>
-            {/* Time period selector */}
-            <div className='flex items-center gap-3'>
-              <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as TimePeriod)}>
-                <SelectTrigger className='w-36 bg-white'>
-                  <Calendar className='h-4 w-4 mr-2 text-muted-foreground' />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='today'>Today</SelectItem>
-                  <SelectItem value='this-week'>This Week</SelectItem>
-                  <SelectItem value='this-month'>This Month</SelectItem>
-                  <SelectItem value='this-quarter'>This Quarter</SelectItem>
-                </SelectContent>
-              </Select>
+            {displayStreak > 0 && (
+              <div className='absolute -bottom-2 -right-2 bg-orange-500 text-white text-sm font-black rounded-full h-8 w-8 flex items-center justify-center shadow-lg border-2 border-white'>
+                <Flame className='h-4 w-4' />
+              </div>
+            )}
+          </div>
+          
+          {/* User Info */}
+          <h2 className='text-2xl font-black text-stone-900 tracking-tight'>{displayName}</h2>
+          <p className='text-sm font-semibold text-stone-600 mt-2'>
+            {displayRole}
+          </p>
+          <p className='text-xs text-stone-500 mt-1'>
+            {displayBrands} {displayBrands === 1 ? 'Brand' : 'Brands'}
+          </p>
+          
+          {/* Streak Badge */}
+          {displayStreak > 0 && (
+            <div className='mt-4 px-4 py-2 bg-orange-50 rounded-full'>
+              <p className='text-xs font-bold text-orange-700'>
+                🔥 {displayStreak} Day Execution Streak
+              </p>
+              <p className='text-xs text-orange-600 mt-1'>Keep the momentum going</p>
             </div>
+          )}
+        </div>
+
+        {/* CENTER COLUMN - EXECUTION SCORE (HERO) */}
+        <div className={cn(
+          'flex flex-col items-center justify-center p-8 rounded-2xl shadow-md border-2 transition-all',
+          executionStatus === 'on-track' 
+            ? 'bg-gradient-to-br from-emerald-50 to-emerald-100/50 border-emerald-300'
+            : executionStatus === 'at-risk'
+            ? 'bg-gradient-to-br from-amber-50 to-amber-100/50 border-amber-300'
+            : 'bg-gradient-to-br from-rose-50 to-rose-100/50 border-rose-300'
+        )}>
+          <p className='text-xs font-bold uppercase tracking-widest text-stone-600 mb-4'>
+            {getPeriodLabel(selectedPeriod)} Score
+          </p>
+          
+          {/* Giant Circular Score */}
+          <div className='relative w-40 h-40 flex items-center justify-center mb-6'>
+            <svg className='w-full h-full -rotate-90' viewBox='0 0 100 100'>
+              <circle
+                cx='50'
+                cy='50'
+                r='45'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='3'
+                className='text-stone-200'
+              />
+              <circle
+                cx='50'
+                cy='50'
+                r='45'
+                fill='none'
+                stroke={executionStatus === 'on-track' ? '#22C55E' : executionStatus === 'at-risk' ? '#F59E0B' : '#EF4444'}
+                strokeWidth='3'
+                strokeDasharray={`${2.83 * 45 * (executionPercentage / 100)} ${2.83 * 45}`}
+                strokeLinecap='round'
+                className='transition-all duration-700'
+              />
+            </svg>
+            <div className='absolute inset-0 flex flex-col items-center justify-center'>
+              <div className='text-5xl font-black' style={{
+                color: executionStatus === 'on-track' ? '#22C55E' : executionStatus === 'at-risk' ? '#F59E0B' : '#EF4444'
+              }}>
+                {executionPercentage}
+              </div>
+              <div className='text-sm font-semibold text-stone-500'>/100</div>
+            </div>
+          </div>
+
+          {/* Status Label */}
+          <div className={cn(
+            'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold',
+            executionStatus === 'on-track' 
+              ? 'bg-emerald-200 text-emerald-900'
+              : executionStatus === 'at-risk'
+              ? 'bg-amber-200 text-amber-900'
+              : 'bg-rose-200 text-rose-900'
+          )}>
+            {executionStatus === 'on-track' ? <CheckCircle2 className='h-4 w-4' /> : <AlertCircle className='h-4 w-4' />}
+            {executionStatus === 'on-track' ? 'ON TRACK' : executionStatus === 'at-risk' ? 'NEEDS MOMENTUM' : 'AT RISK'}
+          </div>
+
+          {/* Detail Stats */}
+          <div className='mt-6 pt-6 border-t-2 border-stone-200/40 w-full text-center'>
+            <div className='text-3xl font-black text-stone-900 tabular-nums'>
+              {periodData.completed} <span className='text-stone-400'>/</span> {periodData.total}
+            </div>
+            <p className='text-xs font-semibold text-stone-600 mt-2 uppercase tracking-wide'>
+              Power Move Actions Complete
+            </p>
           </div>
         </div>
 
-        {/* MAIN SCOREBOARD - Two Columns with Silent Divider */}
-        <div className='relative grid grid-cols-2'>
-            {/* Silent Structural Divider - 1px neutral grey line */}
-            <div className='absolute top-0 bottom-0 left-1/2 w-px bg-stone-200 -translate-x-1/2' />
-
-            {/* LEFT: MY POWER MOVES - Structured container */}
-            <div className={cn(
-              'p-8 flex flex-col items-center justify-center text-center min-h-[280px] bg-[#F8FAFC] border-t-2',
-              status.borderAccent
-            )}>
-              <div className='space-y-3'>
-                <p className='text-base font-black uppercase tracking-[0.15em] text-stone-900'>
-                  {selectedPeriod === 'today' ? 'Daily' : selectedPeriod === 'this-week' ? 'Weekly' : selectedPeriod === 'this-month' ? 'Monthly' : 'Quarterly'} Power Moves
-                </p>
-                <p className='text-xs font-semibold text-stone-500'>Your personal execution score (Lead Measures)</p>
-                
-                {/* GIANT SCORE - Status color only on number */}
-                <div className='py-4'>
-                  <div 
-                    className='text-8xl sm:text-9xl font-black tabular-nums leading-none'
-                    style={{ color: status.color }}
+        {/* RIGHT COLUMN - TODAY'S FOCUS */}
+        <div className='p-8 bg-white rounded-2xl shadow-sm border border-stone-200/60'>
+          <div className='flex items-center gap-2 mb-6'>
+            <h3 className='text-base font-black text-stone-900 uppercase tracking-wide'>Today&apos;s Focus</h3>
+            <span className='text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-full'>
+              {todayPowerMoves.length - todayCompletedCount}/{todayPowerMoves.length}
+            </span>
+          </div>
+          
+          {/* Top 3 Power Moves */}
+          <div className='space-y-3'>
+            {todayPowerMoves.slice(0, 3).length === 0 ? (
+              <p className='text-xs text-stone-500 text-center py-4'>No power moves for today</p>
+            ) : (
+              todayPowerMoves.slice(0, 3).map((pm, index) => {
+                const { target, actual } = getTargetActualForPeriod(pm, 'today')
+                const isCompleted = actual >= target
+                return (
+                  <div
+                    key={pm.id}
+                    className={cn(
+                      'flex items-start gap-3 p-3 rounded-lg border transition-all',
+                      isCompleted
+                        ? 'bg-emerald-50 border-emerald-200'
+                        : 'bg-stone-50 border-stone-200 hover:border-stone-300'
+                    )}
                   >
-                    {executionPercentage}
-                  </div>
-                  <div className='text-2xl font-bold text-stone-400 mt-2'>/100</div>
-                </div>
-
-                {/* Status Badge */}
-                <div className={cn(
-                  'inline-flex items-center gap-2 px-6 py-3 rounded-lg shadow-sm',
-                  status.bg,
-                  status.text
-                )}>
-                  <span className='text-base font-black tracking-wide'>
-                    {status.badge}
-                  </span>
-                </div>
-
-                {/* Power Moves Detail */}
-                <div className='mt-4 pt-4 border-t-2 border-stone-200'>
-                  <p className='text-3xl font-black text-stone-900 tabular-nums'>
-                    {periodData.completed} <span className='text-stone-400'>/</span> {periodData.total}
-                  </p>
-                  <p className='text-xs font-bold text-stone-500 mt-1 uppercase tracking-wider'>Power Move Actions Complete</p>
-                  {selectedPeriod === 'today' && periodData.total - periodData.completed > 0 && (
-                    <p className='text-xs text-stone-500 mt-2 font-semibold'>
-                      {periodData.total - periodData.completed} remaining today
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT: LINKED VICTORY TARGETS - Rounded container */}
-            <div className='p-6 min-h-[280px] flex flex-col justify-center bg-white rounded-r-lg'>
-              <div className='space-y-4'>
-                <div className='text-center mb-4'>
-                  <p className='text-base font-black uppercase tracking-[0.15em] text-stone-900'>Linked Victory Targets</p>
-                  <p className='text-xs font-semibold text-stone-500 mt-1'>Results your Power Moves contribute to (Lag Measures)</p>
-                </div>
-
-                {/* Victory Target Cards */}
-                <div className='space-y-3'>
-                  {linkedVictoryTargets.length === 0 ? (
-                    <div className='border border-dashed border-stone-200 rounded-lg p-4 text-center text-sm text-stone-500'>
-                      No linked victory targets yet.
+                    <Checkbox
+                      checked={isCompleted}
+                      onCheckedChange={() => handleCompletePowerMove(pm.id)}
+                      className='mt-1'
+                      disabled={isCompleted}
+                    />
+                    <div className='flex-1 min-w-0'>
+                      <p className={cn(
+                        'text-sm font-semibold text-stone-900 truncate',
+                        isCompleted && 'line-through text-stone-500'
+                      )}>
+                        {pm.name}
+                      </p>
+                      <p className='text-xs text-stone-500 mt-0.5'>{actual}/{target} completed</p>
                     </div>
-                  ) : (
-                    linkedVictoryTargets.map((vt, index) => {
-                      const progress = vt.progress
-                      const vtStatusColor = progress >= 70 ? '#16A34A' : progress >= 50 ? '#F59E0B' : '#DC2626'
-                      const vtStatusBg = progress >= 70 ? 'bg-[#16A34A]' : progress >= 50 ? 'bg-[#F59E0B]' : 'bg-[#DC2626]'
-                      const vtStatusLabel = progress >= 70 ? 'On Track' : progress >= 50 ? 'At Risk' : 'Behind'
-                      const isPrimaryTarget = index === 0
+                  </div>
+                )
+              })
+            )}
+          </div>
+          
+          {todayPowerMoves.length > 3 && (
+            <p className='text-xs text-stone-500 text-center pt-2 font-semibold'>
+              +{todayPowerMoves.length - 3} more today
+            </p>
+          )}
+        </div>
+      </div>
 
-                      return (
-                        <div key={vt.id} className={cn(
-                          'bg-white border-2 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow',
-                          isPrimaryTarget ? 'border-stone-300' : 'border-stone-200'
-                        )}>
-                          <div className='flex items-start justify-between gap-2 mb-3'>
-                            <div className='flex-1'>
-                              <p className='text-sm font-bold text-stone-900 leading-tight'>{vt.title}</p>
-                              <p className='text-xs font-semibold text-stone-400 mt-1'>{vt.brand}</p>
-                            </div>
-                            <span className={cn('text-xs font-black px-2.5 py-1 rounded-full text-white shadow-sm', vtStatusBg)}>
-                              {vtStatusLabel}
-                            </span>
-                          </div>
-                          {/* Progress Bar */}
-                          <div className='h-3 rounded-full overflow-hidden bg-stone-200 mb-2'>
-                            <div 
-                              className='h-full transition-all duration-500' 
-                              style={{ 
-                                width: `${Math.min(progress, 100)}%`,
-                                backgroundColor: vtStatusColor
-                              }}
-                            />
-                          </div>
-                          <p className='text-xs font-semibold text-stone-600'>{progress}% complete</p>
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
+      {/* TIME PERIOD SELECTOR */}
+      <div className='flex justify-between items-center px-6 py-4 bg-white rounded-xl border border-stone-200/60 shadow-sm'>
+        <p className='text-sm font-semibold text-stone-600 uppercase tracking-wide'>Time Period</p>
+        <Select value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as TimePeriod)}>
+          <SelectTrigger className='w-40 bg-stone-50 border-stone-200'>
+            <Calendar className='h-4 w-4 mr-2 text-stone-500' />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value='today'>Today</SelectItem>
+            <SelectItem value='this-week'>This Week</SelectItem>
+            <SelectItem value='this-month'>This Month</SelectItem>
+            <SelectItem value='this-quarter'>This Quarter</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-                {/* Summary at bottom */}
-                <div className='mt-4 pt-4 border-t-2 border-stone-200 text-center'>
-                  <p className='text-xs text-stone-400 italic font-medium'>
-                    Your execution contributes to department victory targets.
-                  </p>
-                </div>
-              </div>
+      {/* POWER MOVES SECTION - Modern Cards */}
+      <div className='bg-white rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden'>
+        <div className='px-6 py-5 border-b border-stone-200/60 bg-stone-50'>
+          <div className='flex items-center gap-3'>
+            <div className='w-3 h-3 rounded-full bg-emerald-500' />
+            <div>
+              <p className='text-sm font-black uppercase tracking-[0.1em] text-stone-900'>Power Moves</p>
+              <p className='text-xs text-stone-500 mt-0.5'>Lead Measures - Recurring Actions</p>
             </div>
           </div>
-      </Card>
-
-      {/* Company Goal Context - Moved below scoreboard */}
-      <div className='text-xs font-semibold text-stone-500 px-2'>
-        <span className='font-semibold text-stone-600'>Company Goal (Context):</span> Not set yet
-        <span className='text-stone-400 mx-2'>·</span> Your execution feeds your department's weekly score
-      </div>
-
-      {/* Section Legend - Same as Department */}
-      <div className='grid grid-cols-3 gap-4 text-xs text-stone-500'>
-        <div className='flex items-start gap-2'>
-          <div className='w-2 h-2 rounded-full mt-1' style={{ backgroundColor: '#16A34A' }} />
-          <div>
-            <p className='font-semibold text-stone-700'>Power Moves</p>
-            <p className='text-stone-500'>Recurring actions executed daily, weekly, or monthly</p>
-          </div>
-        </div>
-        <div className='flex items-start gap-2'>
-          <div className='w-2 h-2 rounded-full mt-1' style={{ backgroundColor: '#F59E0B' }} />
-          <div>
-            <p className='font-semibold text-stone-700'>Tasks</p>
-            <p className='text-stone-500'>One-time activities completed once per period</p>
-          </div>
-        </div>
-        <div className='flex items-start gap-2'>
-          <div className='w-2 h-2 rounded-full mt-1' style={{ backgroundColor: '#DC2626' }} />
-          <div>
-            <p className='font-semibold text-stone-700'>Commitments</p>
-            <p className='text-stone-500'>Team promises mentioned in weekly calls</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Period Progress Divider */}
-      <div className='py-4 px-6 bg-stone-50 border-t-2 border-b border-stone-200 rounded-lg'>
-        <div className='flex items-center justify-between'>
-          <p className='text-xs font-black uppercase tracking-[0.2em] text-stone-600'>
-            {selectedPeriod === 'today' ? "Today's" : selectedPeriod === 'this-week' ? 'This Week\'s' : selectedPeriod === 'this-month' ? 'This Month\'s' : 'This Quarter\'s'} Execution
-          </p>
-          <p className='text-xs font-semibold text-stone-500'>
-            {periodData.completed} of {periodData.total} power move actions · {periodData.total - periodData.completed} remaining
-          </p>
-        </div>
-      </div>
-
-      {/* Power Moves Section - Department Style */}
-      <div className='bg-white border border-stone-200 rounded-lg overflow-hidden'>
-        <div className='px-6 py-4 border-b border-stone-200 bg-stone-50 flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div className='w-3 h-3 rounded-full' style={{ backgroundColor: '#16A34A' }} />
-            <p className='text-sm font-black uppercase tracking-[0.1em] text-stone-900'>Power Moves (Lead Measures)</p>
-            <span className='text-xs font-semibold text-stone-500'>Recurring Actions_test</span>
-          </div>
         </div>
 
-        <div className='overflow-x-auto'>
-          <table className='w-full'>
-            <thead>
-              <tr className='border-b border-stone-200 bg-stone-50'>
-                <th className='px-6 py-3 text-left text-xs font-bold text-stone-600 uppercase tracking-wider'>Power Move</th>
-                <th className='px-6 py-3 text-left text-xs font-bold text-stone-600 uppercase tracking-wider'>Priority</th>
-                <th className='px-6 py-3 text-left text-xs font-bold text-stone-600 uppercase tracking-wider'>Cadence</th>
-                <th className='px-6 py-3 text-center text-xs font-bold text-stone-600 uppercase tracking-wider'>Progress</th>
-                <th className='px-6 py-3 text-center text-xs font-bold text-stone-600 uppercase tracking-wider'>Status</th>
-                <th className='px-6 py-3 text-center text-xs font-bold text-stone-600 uppercase tracking-wider'>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {myPowerMoves.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className='px-6 py-8 text-center text-sm text-stone-500'>
-                    No power moves yet for this period.
-                  </td>
-                </tr>
-              ) : (
-                myPowerMoves.map((pm, index) => {
-                  const isPrimary = index < 2
-                  const { target, actual } = getTargetActualForPeriod(pm, selectedPeriod)
-                  const percentage = target > 0 ? Math.round((actual / target) * 100) : 0
-                  const executionStatus = percentage >= 100 ? 'Completed' : percentage > 0 ? 'In Progress' : 'Not Started'
-                  const cycleCount = Math.max(0, Math.floor(target || 0))
-                  const visibleCycles = Math.min(cycleCount, 30)
-                  const overflowCycles = Math.max(0, cycleCount - visibleCycles)
-                  const completedCycles = Math.min(Math.max(0, actual || 0), cycleCount)
+        <div className='divide-y divide-stone-200/60'>
+          {myPowerMoves.length === 0 ? (
+            <p className='px-6 py-8 text-center text-sm text-stone-500'>No power moves yet for this period.</p>
+          ) : (
+            myPowerMoves.map((pm, index) => {
+              const { target, actual } = getTargetActualForPeriod(pm, selectedPeriod)
+              const percentage = target > 0 ? Math.round((actual / target) * 100) : 0
+              const isCompleted = actual >= target
+              const isPrimary = index < 2
 
-                  return (
-                    <tr key={pm.id} className='border-b border-stone-200 hover:bg-stone-50'>
-                      <td className='px-6 py-4'>
-                        <p className='text-sm font-bold text-stone-900'>{pm.name}</p>
-                        <p className='text-xs text-stone-500 mt-0.5'>{pm.brand}</p>
-                      </td>
-                      <td className='px-6 py-4'>
-                        <span className={cn(
-                          'inline-flex text-xs font-bold px-2 py-1 rounded',
-                          isPrimary 
-                            ? 'bg-amber-50 text-amber-700' 
-                            : 'text-stone-500'
-                        )}>
-                          {isPrimary ? 'Primary' : 'Supporting'}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4 text-xs font-semibold text-stone-600'>
-                        {pm.frequency}
-                      </td>
-                      <td className='px-6 py-4'>
-                        <div className='flex items-center gap-3'>
-                          <div className='flex-1 max-w-xs'>
-                            <div className='flex flex-wrap items-center gap-1 text-stone-400'>
-                              {cycleCount === 0 ? (
-                                <span className='text-xs text-stone-400'>—</span>
-                              ) : (
-                                <>
-                                  {Array.from({ length: visibleCycles }).map((_, idx) => (
-                                    <span
-                                      key={idx}
-                                      className={cn(
-                                        'text-base leading-none font-black',
-                                        idx < completedCycles ? 'text-emerald-600' : 'text-stone-500'
-                                      )}
-                                    >
-                                      -
-                                    </span>
-                                  ))}
-                                  {overflowCycles > 0 && (
-                                    <span className='text-xs text-stone-500'>+{overflowCycles}</span>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <span className='text-xs font-bold text-stone-600 w-12 text-right'>
-                            {actual}/{target}
+              return (
+                <div
+                  key={pm.id}
+                  className='px-6 py-4 hover:bg-stone-50/50 transition-colors'
+                >
+                  <div className='flex items-center justify-between gap-4 mb-3'>
+                    <div className='flex-1 min-w-0'>
+                      <div className='flex items-center gap-2'>
+                        <h4 className='text-sm font-bold text-stone-900 truncate'>{pm.name}</h4>
+                        {isPrimary && (
+                          <span className='inline-flex text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-700 whitespace-nowrap'>
+                            Primary
                           </span>
-                        </div>
-                      </td>
-                      <td className='px-6 py-4 text-center'>
-                        <span className={cn(
-                          'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold',
-                          executionStatus === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
-                          executionStatus === 'In Progress' ? 'bg-amber-100 text-amber-700' :
-                          'bg-stone-200 text-stone-700'
-                        )}>
-                          {executionStatus}
-                        </span>
-                      </td>
-                      <td className='px-6 py-4 text-center'>
-                        <Button
-                          size='sm'
-                          disabled={actual >= target}
-                          onClick={() => handleCompletePowerMove(pm.id)}
-                          className={cn(
-                            'text-xs font-bold',
-                            actual >= target
-                              ? 'bg-stone-200 text-stone-500 cursor-not-allowed'
-                              : 'bg-[#16A34A] hover:bg-[#15803d] text-white'
-                          )}
-                        >
-                          {actual >= target ? 'Done' : 'Complete'}
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                        )}
+                      </div>
+                      <p className='text-xs text-stone-500 mt-1'>{pm.brand}</p>
+                    </div>
+                    <div className='flex items-center gap-4'>
+                      <div className='text-right'>
+                        <p className='text-sm font-bold text-stone-900'>{actual}/{target}</p>
+                        <p className='text-xs text-stone-500'>{pm.frequency}</p>
+                      </div>
+                      <Button
+                        size='sm'
+                        onClick={() => handleCompletePowerMove(pm.id)}
+                        disabled={isCompleted}
+                        className={cn(
+                          'text-xs font-bold',
+                          isCompleted
+                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        )}
+                      >
+                        {isCompleted ? '✓ Done' : 'Complete'}
+                      </Button>
+                    </div>
+                  </div>
 
-      {/* Tasks Section - Department Style */}
-      <div className='bg-white border border-stone-200 rounded-lg overflow-hidden'>
-        <div className='px-6 py-4 border-b border-stone-200 bg-stone-50 flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div className='w-3 h-3 rounded-full' style={{ backgroundColor: '#F59E0B' }} />
-            <p className='text-sm font-black uppercase tracking-[0.1em] text-stone-900'>Tasks</p>
-            <span className='text-xs font-semibold text-stone-500'>One-Time Activities</span>
-          </div>
-        </div>
-
-        <div className='divide-y divide-stone-200'>
-          {tasks.length === 0 ? (
-            <p className='px-6 py-4 text-sm text-stone-500'>No tasks for this period</p>
-          ) : (
-            tasks.map((task) => (
-              <div key={task.id} className='px-6 py-4 flex items-center gap-4 hover:bg-stone-50'>
-                <Checkbox 
-                  checked={task.completed} 
-                  onCheckedChange={() => toggleTask(task.id)} 
-                  className='h-5 w-5' 
-                />
-                <div className='flex-1'>
-                  <p className={cn('text-sm font-bold text-stone-900', task.completed && 'line-through text-stone-400')}>
-                    {task.title}
-                  </p>
+                  {/* Progress Bar */}
+                  <div className='mt-3'>
+                    <div className='flex justify-between items-center mb-2'>
+                      <span className='text-xs font-semibold text-stone-600'>Progress</span>
+                      <span className={cn(
+                        'text-xs font-bold px-2 py-1 rounded-full',
+                        isCompleted
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : percentage > 0
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-stone-200 text-stone-700'
+                      )}>
+                        {isCompleted ? 'Completed' : percentage > 0 ? 'In Progress' : 'Not Started'}
+                      </span>
+                    </div>
+                    <div className='h-2 bg-stone-200 rounded-full overflow-hidden'>
+                      <div
+                        className={cn(
+                          'h-full transition-all duration-500',
+                          isCompleted ? 'bg-emerald-600' : percentage > 0 ? 'bg-amber-500' : 'bg-stone-300'
+                        )}
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <Badge variant='outline' className='text-xs font-semibold'>
-                  {task.brand}
-                </Badge>
-                <span className={cn(
-                  'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold',
-                  task.completed ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-700'
-                )}>
-                  {task.completed ? 'Completed' : 'Pending'}
-                </span>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>
 
-      {/* Commitments Section - Department Style */}
-      <div className='bg-white border border-stone-200 rounded-lg overflow-hidden'>
-        <div className='px-6 py-4 border-b border-stone-200 bg-stone-50 flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div className='w-3 h-3 rounded-full' style={{ backgroundColor: '#DC2626' }} />
-            <p className='text-sm font-black uppercase tracking-[0.1em] text-stone-900'>Commitments</p>
-            <span className='text-xs font-semibold text-stone-500'>Team Promises</span>
-          </div>
-        </div>
-
-        <div className='divide-y divide-stone-200'>
-          {commitments.length === 0 ? (
-            <p className='px-6 py-4 text-sm text-stone-500'>No commitments for this period</p>
-          ) : (
-            commitments.map((commitment) => (
-              <div key={commitment.id} className='px-6 py-4 flex items-center gap-4 hover:bg-stone-50'>
-                <Checkbox 
-                  checked={commitment.completed} 
-                  onCheckedChange={() => toggleCommitment(commitment.id)} 
-                  className='h-5 w-5' 
-                />
-                <div className='flex-1'>
-                  <p className={cn('text-sm font-bold text-stone-900', commitment.completed && 'line-through text-stone-400')}>
-                    {commitment.title}
-                  </p>
+      {/* TASKS AND COMMITMENTS - Collapsible Sections */}
+      <div className='space-y-4'>
+        {/* Tasks Section */}
+        <Collapsible defaultOpen className='bg-white rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden'>
+          <div className='px-6 py-4 border-b border-stone-200/60 bg-stone-50'>
+            <CollapsibleTrigger className='w-full flex items-center justify-between hover:opacity-75 transition-opacity'>
+              <div className='flex items-center gap-3'>
+                <div className='w-3 h-3 rounded-full bg-amber-500' />
+                <div className='text-left'>
+                  <p className='text-sm font-black uppercase tracking-[0.1em] text-stone-900'>Tasks</p>
+                  <p className='text-xs text-stone-500 mt-0.5'>One-Time Activities</p>
                 </div>
-                <Badge variant='outline' className='text-xs font-semibold'>
-                  {commitment.brand}
-                </Badge>
-                <span className={cn(
-                  'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold',
-                  commitment.completed ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-700'
-                )}>
-                  {commitment.completed ? 'Completed' : 'Pending'}
-                </span>
               </div>
-            ))
-          )}
-        </div>
+              <ChevronDown className='h-4 w-4 text-stone-500' />
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent className='divide-y divide-stone-200/60'>
+            {tasks.length === 0 ? (
+              <p className='px-6 py-4 text-sm text-stone-500'>No tasks for this period</p>
+            ) : (
+              tasks.map((task) => (
+                <div key={task.id} className='px-6 py-4 flex items-center gap-3 hover:bg-stone-50/50'>
+                  <Checkbox
+                    checked={task.completed}
+                    onCheckedChange={() => toggleTask(task.id)}
+                    className='h-5 w-5'
+                  />
+                  <div className='flex-1 min-w-0'>
+                    <p className={cn(
+                      'text-sm font-semibold text-stone-900',
+                      task.completed && 'line-through text-stone-400'
+                    )}>
+                      {task.title}
+                    </p>
+                  </div>
+                  {task.brand && (
+                    <Badge variant='outline' className='text-xs font-semibold whitespace-nowrap'>
+                      {task.brand}
+                    </Badge>
+                  )}
+                </div>
+              ))
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Commitments Section */}
+        <Collapsible defaultOpen className='bg-white rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden'>
+          <div className='px-6 py-4 border-b border-stone-200/60 bg-stone-50'>
+            <CollapsibleTrigger className='w-full flex items-center justify-between hover:opacity-75 transition-opacity'>
+              <div className='flex items-center gap-3'>
+                <div className='w-3 h-3 rounded-full bg-rose-500' />
+                <div className='text-left'>
+                  <p className='text-sm font-black uppercase tracking-[0.1em] text-stone-900'>Commitments</p>
+                  <p className='text-xs text-stone-500 mt-0.5'>Team Promises</p>
+                </div>
+              </div>
+              <ChevronDown className='h-4 w-4 text-stone-500' />
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent className='divide-y divide-stone-200/60'>
+            {commitments.length === 0 ? (
+              <p className='px-6 py-4 text-sm text-stone-500'>No commitments for this period</p>
+            ) : (
+              commitments.map((commitment) => (
+                <div key={commitment.id} className='px-6 py-4 flex items-center gap-3 hover:bg-stone-50/50'>
+                  <Checkbox
+                    checked={commitment.completed}
+                    onCheckedChange={() => toggleCommitment(commitment.id)}
+                    className='h-5 w-5'
+                  />
+                  <div className='flex-1 min-w-0'>
+                    <p className={cn(
+                      'text-sm font-semibold text-stone-900',
+                      commitment.completed && 'line-through text-stone-400'
+                    )}>
+                      {commitment.title}
+                    </p>
+                  </div>
+                  {commitment.brand && (
+                    <Badge variant='outline' className='text-xs font-semibold whitespace-nowrap'>
+                      {commitment.brand}
+                    </Badge>
+                  )}
+                </div>
+              ))
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </section>
   )
