@@ -10,7 +10,7 @@ import { TimePeriodSelector } from '@/components/time-period-selector'
 import { ExecutionStreak } from '@/components/execution-streak'
 import { QuarterSelector, type QuarterOption } from '@/components/quarter-selector'
 import { AccountabilitySections } from '@/components/accountability-sections'
-import { Flame, Target, CheckCircle2, AlertCircle, XCircle } from 'lucide-react'
+import { Flame, Target, CheckCircle2, AlertCircle, XCircle, Zap, TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface DepartmentExecutionHeroProps {
@@ -124,38 +124,28 @@ export function DepartmentExecutionHero({
 
   const executionStatus = getExecutionStatus()
 
-  const getExecutionSentence = () => {
-    if (powerMoveStats.percentage >= 70) return 'Execution is on track'
-    if (powerMoveStats.percentage >= 50) return 'Execution needs attention'
-    return 'Execution is inconsistent'
-  }
-
-  // Global status colors - consistent across all departments
   const statusColors = {
     winning: {
-      color: '#16A34A', // emerald-600
+      color: '#16A34A',
       bg: 'bg-emerald-100',
       text: 'text-emerald-700',
-      badge: 'WINNING',
-      message: 'Weekly execution is strong',
+      badge: 'ON TRACK',
       borderAccent: 'border-t-[#16A34A]',
       icon: CheckCircle2,
     },
     'at-risk': {
-      color: '#F59E0B', // amber-500
+      color: '#F59E0B',
       bg: 'bg-[#F59E0B]',
       text: 'text-white',
       badge: 'CAUTION',
-      message: 'Weekly pace needs improvement',
       borderAccent: 'border-t-[#F59E0B]',
       icon: AlertCircle,
     },
     losing: {
-      color: '#DC2626', // red-600
+      color: '#DC2626',
       bg: 'bg-[#DC2626]',
       text: 'text-white',
       badge: 'TRENDING AT RISK',
-      message: 'At current weekly pace, long-term victory targets are trending at risk',
       borderAccent: 'border-t-[#DC2626]',
       icon: XCircle,
     },
@@ -164,492 +154,325 @@ export function DepartmentExecutionHero({
   const status = statusColors[executionStatus]
   const StatusIcon = status.icon
 
+  // Mock team member data
+  const teamMembers = [
+    { name: 'Ravi Kumar', score: 92, streak: 21, status: 'on-track' },
+    { name: 'Pooja Sharma', score: 78, streak: 14, status: 'on-track' },
+    { name: 'Amit Mishra', score: 64, streak: 9, status: 'at-risk' },
+    { name: 'Neha Kapoor', score: 48, streak: 6, status: 'at-risk' },
+    { name: 'Vijay Singh', score: 36, streak: 3, status: 'at-risk' },
+    { name: 'Kavya Bri', score: 28, streak: 2, status: 'losing' },
+  ]
+
   if (!isReady || !companyWIG || !score) {
-    return (
-      <Card className='shadow-sm'>
-        {/* TOP: HERO SECTION - Department Title + Weekly Power Moves Score (PROMOTED) */}
-        <div className='relative overflow-hidden'>
-          {/* Department Header - NOW AT TOP for hero prominence */}
-          <div className='px-6 py-5 bg-stone-50 border-b border-stone-200'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <h2 className='text-3xl font-black text-stone-900 tracking-tight'>{departmentName}</h2>
-                {coreObjective && (
-                  <p className='text-sm font-semibold text-stone-600 mt-1'>{coreObjective.title}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* MAIN SCOREBOARD - Weekly Power Moves + Victory Targets */}
-          <div className='relative grid grid-cols-2'>
-            {/* Silent Structural Divider - 1px neutral grey line */}
-            <div className='absolute top-0 bottom-0 left-1/2 w-px bg-stone-200 -translate-x-1/2' />
-
-            {/* LEFT: WEEKLY POWER MOVES - Structured container */}
-            <div className={cn(
-              'p-8 flex flex-col items-center justify-center text-center min-h-[280px] bg-[#F8FAFC] border-t-2',
-              status.borderAccent
-            )}>
-              <div className='space-y-3'>
-                <p className='text-base font-black uppercase tracking-[0.15em] text-stone-900'>Weekly Power Moves</p>
-                <p className='text-xs font-semibold text-stone-500'>Actions executed this week (Lead Measures_TEST)</p>
-                
-                {/* GIANT SCORE - Status color only on number */}
-                <div className='py-4'>
-                  <div 
-                    className='text-8xl sm:text-9xl font-black tabular-nums leading-none'
-                    style={{ color: status.color }}
-                  >
-                    {powerMoveStats.percentage}
-                  </div>
-                  <div className='text-2xl font-bold text-stone-400 mt-2'>/100000</div>
-                </div>
-
-                {/* Status Badge - Only element with status background color */}
-                <div className={cn(
-                  'inline-flex items-center gap-2 px-6 py-3 rounded-lg shadow-sm',
-                  status.bg,
-                  status.text
-                )}>
-                  <StatusIcon className='h-5 w-5' />
-                  <span className='text-base font-black tracking-wide'>
-                    {status.badge}
-                  </span>
-                </div>
-
-                {/* Power Moves Detail */}
-                <div className='mt-4 pt-4 border-t-2 border-stone-200'>
-                  <p className='text-3xl font-black text-stone-900 tabular-nums'>
-                    {powerMoveStats.completed} <span className='text-stone-400'>/</span> {powerMoveStats.total}
-                  </p>
-                  <p className='text-xs font-bold text-stone-500 mt-1 uppercase tracking-wider'>Power Moves Complete</p>
-                  {/* Time-layer microcopy */}
-                  <p className='text-xs text-stone-400 mt-2 italic font-medium'>
-                    This week's execution contributes to long-term targets
-                  </p>
-                  {/* Invisible confidence signal - Apple-like maturity cue */}
-                  <p className='text-xs text-stone-300 mt-3 font-medium'>
-                    System operating as designed.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT: DEPARTMENT VICTORY TARGETS - Rounded container */}
-            <div className='p-6 min-h-[280px] flex flex-col justify-center bg-white rounded-r-lg'>
-              <div className='space-y-4'>
-                <div className='text-center mb-4'>
-                  <p className='text-base font-black uppercase tracking-[0.15em] text-stone-900'>Department Victory Targets</p>
-                  <p className='text-xs font-semibold text-stone-500 mt-1'>Results measured monthly / quarterly (Lag Measures)</p>
-                  {/* Compounding story - not instant results */}
-                  <p className='text-xs text-stone-400 mt-1.5 italic font-medium'>
-                    Weekly execution compounds into monthly & quarterly victory
-                  </p>
-                </div>
-
-                {/* Victory Target Cards */}
-                <div className='space-y-3'>
-                  {victoryTargets.slice(0, 2).map((vt, index) => {
-                    const quarters = (vt as any).quarters || []
-                    const quarterIndex = ['Q1', 'Q2', 'Q3', 'Q4'].indexOf(selectedQuarter)
-                    const quarterData = quarterIndex >= 0 ? quarters[quarterIndex] : null
-                    const achieved = quarterData?.achieved ?? vt.achieved
-                    const target = quarterData?.target ?? vt.target
-                    const progress = target > 0 ? (achieved / target) * 100 : 0
-                    
-                    // Status-based colors matching global status colors
-                    const vtStatusColor = progress >= 70 ? '#16A34A' : progress >= 50 ? '#F59E0B' : '#DC2626'
-                    const vtStatusBg = progress >= 70 ? 'bg-[#16A34A]' : progress >= 50 ? 'bg-[#F59E0B]' : 'bg-[#DC2626]'
-                    const vtStatusLabel = progress >= 70 ? 'On Track' : progress >= 50 ? 'At Risk' : 'Behind'
-                    
-                    // Trend hint based on progress
-                    const trendHint = progress >= 75 ? 'On pace' : progress >= 50 ? 'Stable' : 'Needs momentum'
-                    const isPrimaryTarget = index === 0
-
-                    return (
-                      <div key={vt.id} className={cn(
-                        'bg-white border-2 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow',
-                        isPrimaryTarget ? 'border-stone-300' : 'border-stone-200'
-                      )}>
-                        <div className='flex items-start justify-between gap-2 mb-3'>
-                          <div className='flex-1'>
-                            <p className='text-sm font-bold text-stone-900 flex-1 leading-tight'>{(vt as any).title || vt.name}</p>
-                            {isPrimaryTarget && (
-                              <p className='text-xs font-semibold text-stone-400 mt-1'>Primary</p>
-                            )}
-                          </div>
-                          <span className={cn('text-xs font-black px-2.5 py-1 rounded-full text-white shadow-sm', vtStatusBg)}>
-                            {vtStatusLabel}
-                          </span>
-                        </div>
-                        <div className='flex items-baseline gap-1 mb-3'>
-                          <span className='text-3xl font-black text-stone-900 tabular-nums'>{achieved}</span>
-                          <span className='text-lg text-stone-400 font-medium'>/</span>
-                          <span className='text-2xl font-black text-stone-600'>{target}</span>
-                          <span className='text-sm font-semibold text-stone-500 ml-2'>({Math.round(progress)}%)</span>
-                        </div>
-                        {/* Progress Bar - color tied to performance threshold, more prominent */}
-                        <div className='h-3 rounded-full overflow-hidden bg-stone-200 mb-2'>
-                          <div 
-                            className='h-full transition-all duration-500' 
-                            style={{ 
-                              width: `${Math.min(progress, 100)}%`,
-                              backgroundColor: vtStatusColor
-                            }}
-                          />
-                        </div>
-                        {/* Trend Hint */}
-                        <p className='text-xs font-semibold text-stone-500'>{trendHint}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Summary at bottom */}
-                <div className='mt-4 pt-4 border-t-2 border-stone-200 text-center'>
-                  <div className='flex items-baseline justify-center gap-2'>
-                    <span 
-                      className='text-4xl font-black tabular-nums'
-                      style={{ 
-                        color: greenTargets === totalTargets ? '#16A34A' :
-                               greenTargets >= totalTargets * 0.7 ? '#16A34A' :
-                               greenTargets >= totalTargets * 0.5 ? '#F59E0B' : '#DC2626'
-                      }}
-                    >
-                      {greenTargets}
-                    </span>
-                    <span className='text-2xl font-bold text-stone-400'>/</span>
-                    <span className='text-3xl font-black text-stone-600'>{totalTargets}</span>
-                  </div>
-                  <p className='text-xs font-bold text-stone-500 mt-1 uppercase tracking-wider'>Targets On Track</p>
-                  {/* Forward-Looking Closure */}
-                  <p className='text-xs text-stone-400 mt-3 italic font-medium'>
-                    Sustain weekly execution to lock monthly victory.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* WEEK SELECTOR - MOVED BELOW HERO (NOW SECONDARY) */}
-        <div className='px-6 py-4 border-b border-stone-200 bg-white'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-4'>
-              <TimePeriodSelector 
-                selectedPeriod={selectedPeriod}
-                onPeriodChange={onPeriodChange}
-                currentWeekStart={currentWeekStart}
-                onNavigate={onNavigate}
-              />
-              <div className='text-sm font-semibold text-stone-600'>
-                {new Date(currentWeekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} –{' '}
-                {new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </div>
-              <div className='flex gap-2'>
-                <Button size='sm' variant='outline' onClick={() => onNavigate('prev')} className='text-xs'>
-                  ← Prev
-                </Button>
-                <Button size='sm' variant='outline' onClick={() => onNavigate('next')} className='text-xs'>
-                  Next →
-                </Button>
-              </div>
-            </div>
-            <div className='flex items-center gap-3'>
-              <QuarterSelector value={selectedQuarter} onChange={onQuarterChange} />
-              <Button 
-                onClick={() => setShowStreak(!showStreak)} 
-                size='sm' 
-                variant='outline' 
-                className='gap-1.5 text-xs h-7 border-stone-300 text-stone-700 hover:bg-stone-50 bg-white'
-              >
-                <Flame className='h-3.5 w-3.5' />
-                {currentStreak > 0 ? `${currentStreak}w` : 'Streak'}
-              </Button>
-
-              <Button 
-                onClick={onWeeklyReview} 
-                size='sm' 
-                variant='outline' 
-                className='gap-1.5 text-xs h-7 border-stone-300 text-stone-700 hover:bg-stone-50 bg-white'
-              >
-                <Target className='h-3 w-3' />
-                Review
-              </Button>
-            </div>
-          </div>
-
-          {showStreak && (
-            <div className='px-5 py-3 border-t border-stone-200 bg-stone-50 mt-3'>
-              <ExecutionStreak currentStreak={currentStreak} bestStreak={bestStreak} weeklyHistory={weeklyHistory} />
-            </div>
-          )}
-        </div>
-      </Card>
-    )
+    return <Card className='shadow-sm'><div className='px-6 py-8'>Loading...</div></Card>
   }
 
   return (
     <div className='space-y-6'>
-      {/* HERO CARD */}
-      <Card className='shadow-sm border border-stone-200 rounded-lg overflow-hidden'>
-        {/* SCOREBOARD STYLE - Swiss Design with Status Accents */}
-        <div className='relative overflow-hidden'>
-          {/* Department Header - Neutral with subtle department color accent */}
-          <div className='px-6 py-5 bg-stone-50 border-b border-stone-200'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <h2 className='text-3xl font-black text-stone-900 tracking-tight'>{departmentName}</h2>
-                {coreObjective && (
-                  <p className='text-sm font-semibold text-stone-600 mt-1'>{coreObjective.title}</p>
-                )}
-              </div>
-              {/* Progressive time marker - story clock */}
-              <div className='text-right'>
-                <p className='text-xs font-semibold text-stone-500'>
-                  {selectedQuarter === 'annual' ? 'Full Year 2026' : `Quarter: ${selectedQuarter}`}
-                </p>
-                <p className='text-xs text-stone-400 mt-0.5'>
-                  {new Date(currentWeekStart).toLocaleDateString('en-US', { month: 'short' })} · Week {Math.ceil((new Date(currentWeekStart).getDate()) / 7)}
-                </p>
-              </div>
+      {/* HERO SECTION - 2 Column Layout */}
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+        {/* LEFT: TEAM EXECUTION RATE */}
+        <div className='bg-white rounded-2xl border border-stone-200/60 shadow-sm p-8 flex flex-col items-center justify-center min-h-[320px]'>
+          <p className='text-xs font-bold uppercase tracking-widest text-stone-500 mb-4'>Team Execution Rate</p>
+          
+          {/* Giant Score Display */}
+          <div className='flex items-center justify-center gap-4 mb-8'>
+            <div className='text-7xl font-black text-stone-900'>{powerMoveStats.percentage}%</div>
+            <div className='w-40 h-40 relative flex items-center justify-center'>
+              <svg className='w-full h-full -rotate-90' viewBox='0 0 100 100'>
+                <circle cx='50' cy='50' r='45' fill='none' stroke='#E5E7EB' strokeWidth='4' />
+                <circle
+                  cx='50'
+                  cy='50'
+                  r='45'
+                  fill='none'
+                  stroke={status.color}
+                  strokeWidth='4'
+                  strokeDasharray={`${2.83 * 45 * (powerMoveStats.percentage / 100)} ${2.83 * 45}`}
+                  strokeLinecap='round'
+                  className='transition-all duration-700'
+                />
+              </svg>
             </div>
           </div>
 
-          {/* MAIN SCOREBOARD - Two Columns with Silent Divider */}
-          <div className='relative grid grid-cols-2'>
-            {/* Silent Structural Divider - 1px neutral grey line */}
-            <div className='absolute top-0 bottom-0 left-1/2 w-px bg-stone-200 -translate-x-1/2' />
+          {/* Status */}
+          <div className={cn('inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6', status.bg, status.text)}>
+            <StatusIcon className='h-4 w-4' />
+            <span className='text-sm font-bold'>{status.badge}</span>
+          </div>
 
-            {/* LEFT: WEEKLY POWER MOVES - Structured container */}
-            <div className={cn(
-              'p-8 flex flex-col items-center justify-center text-center min-h-[280px] bg-[#F8FAFC] border-t-2',
-              status.borderAccent
-            )}>
-              <div className='space-y-3'>
-                <p className='text-base font-black uppercase tracking-[0.15em] text-stone-900'>Weekly Power Moves</p>
-                <p className='text-xs font-semibold text-stone-500'>Actions executed this week (Lead Measures)</p>
-                
-                {/* GIANT SCORE - Status color only on number */}
-                <div className='py-4'>
-                  <div 
-                    className='text-8xl sm:text-9xl font-black tabular-nums leading-none'
-                    style={{ color: status.color }}
-                  >
-                    
-                    {powerMoveStats.percentage}
-                  </div>
-                  <div className='text-2xl font-bold text-stone-400 mt-2'>/100</div>
-                </div>
+          {/* Trend */}
+          <div className='flex items-center gap-2 text-sm font-semibold text-stone-600 mb-6'>
+            <TrendingUp className='h-4 w-4 text-emerald-600' />
+            Last 7 Days
+          </div>
 
-                {/* Status Badge - Only element with status background color */}
-                <div className={cn(
-                  'inline-flex items-center gap-2 px-6 py-3 rounded-lg shadow-sm',
-                  status.bg,
-                  status.text
-                )}>
-                  <StatusIcon className='h-5 w-5' />
-                  <span className='text-base font-black tracking-wide'>
-                    {status.badge}
-                  </span>
-                </div>
-
-                {/* Power Moves Detail */}
-                <div className='mt-4 pt-4 border-t-2 border-stone-200'>
-                  <p className='text-3xl font-black text-stone-900 tabular-nums'>
-                    {powerMoveStats.completed} <span className='text-stone-400'>/</span> {powerMoveStats.total}
-                  </p>
-                  <p className='text-xs font-bold text-stone-500 mt-1 uppercase tracking-wider'>Power Moves Complete</p>
-                  {/* Time-layer microcopy */}
-                  <p className='text-xs text-stone-400 mt-2 italic font-medium'>
-                    This week's execution contributes to long-term targets
-                  </p>
-                  {/* Invisible confidence signal - Apple-like maturity cue */}
-                  <p className='text-xs text-stone-300 mt-3 font-medium'>
-                    System operating as designed.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT: DEPARTMENT VICTORY TARGETS - Rounded container */}
-            <div className='p-6 min-h-[280px] flex flex-col justify-center bg-white rounded-r-lg'>
-              <div className='space-y-4'>
-                <div className='text-center mb-4'>
-                  <p className='text-base font-black uppercase tracking-[0.15em] text-stone-900'>Department Victory Targets</p>
-                  <p className='text-xs font-semibold text-stone-500 mt-1'>Results measured monthly / quarterly (Lag Measures)</p>
-                  {/* Compounding story - not instant results */}
-                  <p className='text-xs text-stone-400 mt-1.5 italic font-medium'>
-                    Weekly execution compounds into monthly & quarterly victory
-                  </p>
-                </div>
-
-                {/* Victory Target Cards */}
-                <div className='space-y-3'>
-                  {victoryTargets.slice(0, 2).map((vt, index) => {
-                    const quarters = (vt as any).quarters || []
-                    const quarterIndex = ['Q1', 'Q2', 'Q3', 'Q4'].indexOf(selectedQuarter)
-                    const quarterData = quarterIndex >= 0 ? quarters[quarterIndex] : null
-                    const achieved = quarterData?.achieved ?? vt.achieved
-                    const target = quarterData?.target ?? vt.target
-                    const progress = target > 0 ? (achieved / target) * 100 : 0
-                    
-                    // Status-based colors matching global status colors
-                    const vtStatusColor = progress >= 70 ? '#16A34A' : progress >= 50 ? '#F59E0B' : '#DC2626'
-                    const vtStatusBg = progress >= 70 ? 'bg-[#16A34A]' : progress >= 50 ? 'bg-[#F59E0B]' : 'bg-[#DC2626]'
-                    const vtStatusLabel = progress >= 70 ? 'On Track' : progress >= 50 ? 'At Risk' : 'Behind'
-                    
-                    // Trend hint based on progress
-                    const trendHint = progress >= 75 ? 'On pace' : progress >= 50 ? 'Stable' : 'Needs momentum'
-                    const isPrimaryTarget = index === 0
-
-                    return (
-                      <div key={vt.id} className={cn(
-                        'bg-white border-2 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow',
-                        isPrimaryTarget ? 'border-stone-300' : 'border-stone-200'
-                      )}>
-                        <div className='flex items-start justify-between gap-2 mb-3'>
-                          <div className='flex-1'>
-                            <p className='text-sm font-bold text-stone-900 flex-1 leading-tight'>{(vt as any).title || vt.name}</p>
-                            {isPrimaryTarget && (
-                              <p className='text-xs font-semibold text-stone-400 mt-1'>Primary</p>
-                            )}
-                          </div>
-                          <span className={cn('text-xs font-black px-2.5 py-1 rounded-full text-white shadow-sm', vtStatusBg)}>
-                            {vtStatusLabel}
-                          </span>
-                        </div>
-                        <div className='flex items-baseline gap-1 mb-3'>
-                          <span className='text-3xl font-black text-stone-900 tabular-nums'>{achieved}</span>
-                          <span className='text-lg text-stone-400 font-medium'>/</span>
-                          <span className='text-2xl font-black text-stone-600'>{target}</span>
-                          <span className='text-sm font-semibold text-stone-500 ml-2'>({Math.round(progress)}%)</span>
-                        </div>
-                        {/* Progress Bar - color tied to performance threshold, more prominent */}
-                        <div className='h-3 rounded-full overflow-hidden bg-stone-200 mb-2'>
-                          <div 
-                            className='h-full transition-all duration-500' 
-                            style={{ 
-                              width: `${Math.min(progress, 100)}%`,
-                              backgroundColor: vtStatusColor
-                            }}
-                          />
-                        </div>
-                        {/* Trend Hint */}
-                        <p className='text-xs font-semibold text-stone-500'>{trendHint}</p>
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Summary at bottom */}
-                <div className='mt-4 pt-4 border-t-2 border-stone-200 text-center'>
-                  <div className='flex items-baseline justify-center gap-2'>
-                    <span 
-                      className='text-4xl font-black tabular-nums'
-                      style={{ 
-                        color: greenTargets === totalTargets ? '#16A34A' :
-                               greenTargets >= totalTargets * 0.7 ? '#16A34A' :
-                               greenTargets >= totalTargets * 0.5 ? '#F59E0B' : '#DC2626'
-                      }}
-                    >
-                      {greenTargets}
-                    </span>
-                    <span className='text-2xl font-bold text-stone-400'>/</span>
-                    <span className='text-3xl font-black text-stone-600'>{totalTargets}</span>
-                  </div>
-                  <p className='text-xs font-bold text-stone-500 mt-1 uppercase tracking-wider'>Targets On Track</p>
-                  {/* Forward-Looking Closure */}
-                  <p className='text-xs text-stone-400 mt-3 italic font-medium'>
-                    Sustain weekly execution to lock monthly victory.
-                  </p>
-                </div>
-              </div>
-            </div>
+          {/* Completion Stats */}
+          <div className='text-center pt-6 border-t border-stone-200/60'>
+            <p className='text-4xl font-black text-stone-900 mb-1'>{powerMoveStats.completed} / {powerMoveStats.total}</p>
+            <p className='text-xs font-semibold text-stone-500 uppercase'>Power Moves Completed</p>
           </div>
         </div>
 
-        {/* WEEK SELECTOR - MOVED BELOW HERO (NOW SECONDARY) */}
-        <div className='px-6 py-4 border-b border-stone-200 bg-white'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-4'>
-              <TimePeriodSelector 
-                selectedPeriod={selectedPeriod}
-                onPeriodChange={onPeriodChange}
-                currentWeekStart={currentWeekStart}
-                onNavigate={onNavigate}
-              />
-              <div className='text-sm font-semibold text-stone-600'>
-                {new Date(currentWeekStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} –{' '}
-                {new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </div>
-              <div className='flex gap-2'>
-                <Button size='sm' variant='outline' onClick={() => onNavigate('prev')} className='text-xs'>
-                  ← Prev
-                </Button>
-                <Button size='sm' variant='outline' onClick={() => onNavigate('next')} className='text-xs'>
-                  Next →
-                </Button>
-              </div>
-            </div>
-            <div className='flex items-center gap-3'>
-              <QuarterSelector value={selectedQuarter} onChange={onQuarterChange} />
-              <Button 
-                onClick={() => setShowStreak(!showStreak)} 
-                size='sm' 
-                variant='outline' 
-                className='gap-1.5 text-xs h-7 border-stone-300 text-stone-700 hover:bg-stone-50 bg-white'
-              >
-                <Flame className='h-3.5 w-3.5' />
-                {currentStreak > 0 ? `${currentStreak}w` : 'Streak'}
-              </Button>
+        {/* RIGHT: VICTORY TARGETS */}
+        <div className='bg-white rounded-2xl border border-stone-200/60 shadow-sm p-8'>
+          <p className='text-xs font-bold uppercase tracking-widest text-stone-500 mb-6'>Department Victory Targets</p>
+          <p className='text-xs text-stone-600 mb-6 font-semibold'>Results measured weekly</p>
 
-              <Button 
-                onClick={onWeeklyReview} 
-                size='sm' 
-                variant='outline' 
-                className='gap-1.5 text-xs h-7 border-stone-300 text-stone-700 hover:bg-stone-50 bg-white'
-              >
-                <Target className='h-3 w-3' />
-                Review
-              </Button>
-            </div>
+          <div className='space-y-4'>
+            {victoryTargets.slice(0, 3).map((vt, index) => {
+              const progress = vt.target > 0 ? (vt.achieved / vt.target) * 100 : 0
+              const statusColor = progress >= 70 ? '#22C55E' : progress >= 50 ? '#F59E0B' : '#EF4444'
+              const statusLabel = progress >= 70 ? 'On Pace' : progress >= 50 ? 'Needs Momentum' : 'Behind'
+              const isPrimary = index === 0
+
+              return (
+                <div key={vt.id} className='flex items-start gap-4 pb-4 border-b border-stone-200/60 last:border-0 last:pb-0'>
+                  <div className='w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-lg' style={{ backgroundColor: `${statusColor}20` }}>
+                    <div className='text-center'>
+                      <p className='text-2xl font-black' style={{ color: statusColor }}>{Math.round(progress)}%</p>
+                    </div>
+                  </div>
+                  <div className='flex-1 min-w-0'>
+                    <div className='flex items-center gap-2'>
+                      <p className='text-sm font-bold text-stone-900'>{(vt as any).title || vt.name}</p>
+                      {isPrimary && <span className='text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded'>Primary</span>}
+                    </div>
+                    <p className='text-xs text-stone-500 mt-1'>{vt.achieved} / {vt.target} {vt.unit || ''}</p>
+                    <p className='text-xs font-semibold mt-2' style={{ color: statusColor }}>{statusLabel}</p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
-          {showStreak && (
-            <div className='px-5 py-3 border-t border-stone-200 bg-stone-50 mt-3'>
-              <ExecutionStreak currentStreak={currentStreak} bestStreak={bestStreak} weeklyHistory={weeklyHistory} />
-            </div>
-          )}
+          {/* Footer Stats */}
+          <div className='mt-6 pt-6 border-t border-stone-200/60 flex items-center justify-center gap-3'>
+            <span className='text-3xl font-black text-stone-900'>{greenTargets}</span>
+            <span className='text-stone-400 font-bold'>/</span>
+            <span className='text-2xl font-black text-stone-600'>{totalTargets}</span>
+            <span className='text-xs font-semibold text-stone-500 ml-2'>On Track</span>
+          </div>
+        </div>
+      </div>
+
+      {/* MOMENTUM STRIP - 4 KPI Cards */}
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+        <div className='bg-white p-6 rounded-xl border border-stone-200/60 shadow-sm'>
+          <p className='text-xs font-bold text-stone-500 uppercase tracking-wide mb-3'>Weekly Momentum</p>
+          <p className='text-3xl font-black text-stone-900 mb-1'>+18%</p>
+          <p className='text-xs text-stone-500 font-semibold'>vs last week</p>
+        </div>
+        <div className='bg-white p-6 rounded-xl border border-stone-200/60 shadow-sm'>
+          <p className='text-xs font-bold text-stone-500 uppercase tracking-wide mb-3'>Consistency</p>
+          <p className='text-3xl font-black text-emerald-600 mb-1'>92%</p>
+          <p className='text-xs text-stone-500 font-semibold'>Great consistency</p>
+        </div>
+        <div className='bg-white p-6 rounded-xl border border-stone-200/60 shadow-sm'>
+          <p className='text-xs font-bold text-stone-500 uppercase tracking-wide mb-3'>Targets On Pace</p>
+          <p className='text-3xl font-black text-amber-600 mb-1'>{greenTargets} / {totalTargets}</p>
+          <p className='text-xs text-stone-500 font-semibold'>On track</p>
+        </div>
+        <div className='bg-white p-6 rounded-xl border border-stone-200/60 shadow-sm'>
+          <p className='text-xs font-bold text-stone-500 uppercase tracking-wide mb-3'>Execution Trend</p>
+          <p className='text-3xl font-black text-blue-600 mb-1'>Rising</p>
+          <p className='text-xs text-stone-500 font-semibold'>Last 7 days</p>
+        </div>
+      </div>
+
+      {/* TEAM MOMENTUM LEADERBOARD */}
+      <div className='bg-white rounded-2xl border border-stone-200/60 shadow-sm p-8'>
+        <div className='flex items-center justify-between mb-6'>
+          <div>
+            <p className='text-lg font-black uppercase tracking-wide text-stone-900'>Team Momentum</p>
+            <p className='text-xs text-stone-500 mt-1 font-semibold'>Ranked by execution score</p>
+          </div>
+          <Button variant='ghost' size='sm' className='text-blue-600 font-semibold'>View full leaderboard →</Button>
         </div>
 
-        {/* Three-Section Accountability Structure - Power Moves, Tasks, Commitments */}
-        <AccountabilitySections 
-          powerMoves={powerMoves}
-          tasks={[]}
-          commitments={[]}
-          onAddPowerMove={onAddPowerMove}
-          onAddTask={onAddTask}
-          onAddCommitment={onAddCommitment}
-        />
-      </Card>
-    </div>
-  )
-}
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4'>
+          {teamMembers.map((member, index) => {
+            const statusColor = member.status === 'on-track' ? '#22C55E' : member.status === 'at-risk' ? '#F59E0B' : '#EF4444'
+            return (
+              <div key={member.name} className='flex flex-col items-center text-center p-4 rounded-xl bg-stone-50 border border-stone-200/60'>
+                <div className='text-2xl font-black text-stone-400 mb-2'>{index + 1}</div>
+                <div className='w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold' style={{ backgroundColor: statusColor }}>
+                  {member.name.split(' ')[0][0]}
+                </div>
+                <p className='text-sm font-bold text-stone-900'>{member.name}</p>
+                <p className='text-3xl font-black mt-3' style={{ color: statusColor }}>{member.score}%</p>
+                <div className='flex items-center gap-1 mt-3 justify-center'>
+                  <Flame className='h-4 w-4 text-orange-500' />
+                  <p className='text-xs font-bold text-orange-600'>{member.streak} Day Streak</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
-// Context metric - Larger for 50+ readability with better visual hierarchy
-function ContextMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className='text-center space-y-2'>
-      <p className='text-4xl font-black text-stone-950 tabular-nums tracking-tight'>{value}</p>
-      <p className='text-xs font-bold uppercase tracking-[0.1em] text-stone-600'>{label}</p>
+      {/* INSIGHT CARDS - 3 Column */}
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+        {/* Most Consistent Member */}
+        <div className='bg-white rounded-2xl border border-stone-200/60 shadow-sm p-6'>
+          <div className='flex items-center gap-3 mb-4'>
+            <div className='w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center'>
+              <CheckCircle2 className='h-5 w-5 text-emerald-600' />
+            </div>
+            <p className='text-sm font-black uppercase tracking-wide text-stone-900'>Most Consistent Member</p>
+          </div>
+          <div className='w-12 h-12 rounded-full mx-auto mb-3 bg-emerald-500 flex items-center justify-center text-white font-bold text-lg'>RK</div>
+          <p className='text-center font-bold text-stone-900'>Ravi Kumar</p>
+          <p className='text-center text-sm text-stone-500 mt-1 font-semibold'>92% Consistency</p>
+          <p className='text-center text-xs text-stone-400 mt-3'>21 Day Execution Streak</p>
+        </div>
+
+        {/* At Risk Member */}
+        <div className='bg-white rounded-2xl border border-stone-200/60 shadow-sm p-6'>
+          <div className='flex items-center gap-3 mb-4'>
+            <div className='w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center'>
+              <AlertCircle className='h-5 w-5 text-amber-600' />
+            </div>
+            <p className='text-sm font-black uppercase tracking-wide text-stone-900'>At Risk Member</p>
+          </div>
+          <div className='w-12 h-12 rounded-full mx-auto mb-3 bg-amber-500 flex items-center justify-center text-white font-bold text-lg'>AM</div>
+          <p className='text-center font-bold text-stone-900'>Amit Mishra</p>
+          <p className='text-center text-sm text-stone-500 mt-1 font-semibold'>64% Consistency</p>
+          <p className='text-center text-xs text-amber-600 mt-3 font-bold'>Needs Momentum</p>
+        </div>
+
+        {/* Team Energy */}
+        <div className='bg-white rounded-2xl border border-stone-200/60 shadow-sm p-6'>
+          <div className='flex items-center gap-3 mb-4'>
+            <div className='w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center'>
+              <Zap className='h-5 w-5 text-emerald-600' />
+            </div>
+            <p className='text-sm font-black uppercase tracking-wide text-stone-900'>Team Energy</p>
+          </div>
+          <div className='text-center'>
+            <div className='w-16 h-16 rounded-full mx-auto mb-3 bg-emerald-100 flex items-center justify-center'>
+              <div className='text-3xl'>😊</div>
+            </div>
+            <p className='text-center text-sm font-bold text-stone-900'>High Momentum</p>
+            <p className='text-center text-xs text-stone-500 mt-1 font-semibold'>Team is executing well!</p>
+          </div>
+        </div>
+      </div>
+
+      {/* TIME PERIOD & CONTROLS */}
+      <div className='bg-white rounded-2xl border border-stone-200/60 shadow-sm p-6'>
+        <div className='flex items-center justify-between gap-4 flex-wrap'>
+          <TimePeriodSelector 
+            selectedPeriod={selectedPeriod}
+            onPeriodChange={onPeriodChange}
+            currentWeekStart={currentWeekStart}
+            onNavigate={onNavigate}
+          />
+          <div className='flex items-center gap-3'>
+            <QuarterSelector value={selectedQuarter} onChange={onQuarterChange} />
+            <Button 
+              onClick={() => setShowStreak(!showStreak)} 
+              size='sm' 
+              variant='outline'
+              className='gap-1.5 text-xs'
+            >
+              <Flame className='h-4 w-4' />
+              {currentStreak > 0 ? `${currentStreak}w Streak` : 'Streak'}
+            </Button>
+            <Button 
+              onClick={onWeeklyReview} 
+              size='sm' 
+              variant='outline'
+              className='gap-1.5 text-xs'
+            >
+              <Target className='h-4 w-4' />
+              Review
+            </Button>
+          </div>
+        </div>
+
+        {showStreak && (
+          <div className='px-5 py-3 border-t border-stone-200 bg-stone-50 mt-4 rounded-lg'>
+            <ExecutionStreak currentStreak={currentStreak} bestStreak={bestStreak} weeklyHistory={weeklyHistory} />
+          </div>
+        )}
+      </div>
+
+      {/* POWER MOVES SECTION - Horizontal Cards */}
+      <div>
+        <div className='flex items-center justify-between mb-6'>
+          <div>
+            <p className='text-lg font-black uppercase tracking-wide text-stone-900'>Power Moves</p>
+            <p className='text-xs text-stone-500 mt-1 font-semibold'>Lead Measures - Recurring Actions</p>
+          </div>
+          <Button onClick={onAddPowerMove} size='sm' className='gap-1.5'>
+            <Zap className='h-4 w-4' />
+            Add Power Move
+          </Button>
+        </div>
+
+        {powerMoves.length === 0 ? (
+          <div className='bg-white p-8 rounded-xl border border-stone-200/60 text-center'>
+            <p className='text-sm text-stone-500'>No power moves yet for this period.</p>
+          </div>
+        ) : (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
+            {powerMoves.map((pm, index) => {
+              const percentage = pm.targetPerCycle > 0 ? Math.round((pm.progress / pm.targetPerCycle) * 100) : 0
+              const isCompleted = pm.progress >= pm.targetPerCycle
+              const isPrimary = index < 2
+
+              const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-red-500', 'bg-cyan-500']
+              const bgColor = colors[index % colors.length]
+
+              return (
+                <div key={pm.id} className='bg-white rounded-xl border border-stone-200/60 shadow-sm p-5 hover:shadow-md transition-all flex flex-col'>
+                  <div className='flex items-start justify-between mb-3'>
+                    <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold', bgColor)}>
+                      {pm.name?.[0]?.toUpperCase() || '○'}
+                    </div>
+                    {isPrimary && <span className='text-xs font-bold px-2 py-1 bg-amber-100 text-amber-700 rounded'>Primary</span>}
+                  </div>
+                  
+                  <h3 className='text-sm font-bold text-stone-900 mb-1 line-clamp-2'>{pm.name}</h3>
+                  <p className='text-xs text-stone-500 font-semibold mb-3'>{pm.frequency}</p>
+
+                  <div className='mb-4'>
+                    <div className='flex justify-between items-center mb-1'>
+                      <span className='text-xs font-semibold text-stone-600'>{pm.progress}/{pm.targetPerCycle}</span>
+                      <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full', isCompleted ? 'bg-emerald-100 text-emerald-700' : percentage > 0 ? 'bg-amber-100 text-amber-700' : 'bg-stone-200 text-stone-700')}>
+                        {percentage}%
+                      </span>
+                    </div>
+                    <div className='h-1.5 bg-stone-200 rounded-full overflow-hidden'>
+                      <div
+                        className={cn('h-full transition-all duration-500', isCompleted ? 'bg-emerald-600' : percentage > 0 ? 'bg-amber-500' : 'bg-stone-300')}
+                        style={{ width: `${Math.min(percentage, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <Button size='sm' disabled={isCompleted} className={cn('w-full text-xs font-bold mt-auto', isCompleted ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'bg-emerald-600 hover:bg-emerald-700 text-white')}>
+                    {isCompleted ? '✓ Done' : 'Complete'}
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ACCOUNTABILITY SECTIONS */}
+      <AccountabilitySections 
+        powerMoves={powerMoves}
+        tasks={[]}
+        commitments={[]}
+        onAddPowerMove={onAddPowerMove}
+        onAddTask={onAddTask}
+        onAddCommitment={onAddCommitment}
+      />
     </div>
   )
 }
