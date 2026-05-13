@@ -515,82 +515,106 @@ export function IndividualDashboard({
         </Select>
       </div>
 
-      {/* POWER MOVES SECTION - Modern Cards */}
-      <div className='bg-white rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden'>
-        <div className='px-6 py-5 border-b border-stone-200/60 bg-stone-50'>
-          <div className='flex items-center gap-3'>
-            <div className='w-3 h-3 rounded-full bg-emerald-500' />
-            <div>
-              <p className='text-sm font-black uppercase tracking-[0.1em] text-stone-900'>Power Moves</p>
-              <p className='text-xs text-stone-500 mt-0.5'>Lead Measures - Recurring Actions</p>
-            </div>
+      {/* MOMENTUM STRIP - 4 KPI Cards */}
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+        {/* Weekly Momentum */}
+        <div className='bg-white p-6 rounded-xl border border-stone-200/60 shadow-sm'>
+          <div className='flex items-center justify-between mb-2'>
+            <p className='text-xs font-bold text-stone-500 uppercase tracking-wide'>Weekly Momentum</p>
           </div>
+          <p className='text-3xl font-black text-stone-900'>+18%</p>
+          <p className='text-xs text-stone-500 mt-2 font-semibold'>vs last week</p>
         </div>
 
-        <div className='divide-y divide-stone-200/60'>
-          {myPowerMoves.length === 0 ? (
-            <p className='px-6 py-8 text-center text-sm text-stone-500'>No power moves yet for this period.</p>
-          ) : (
-            myPowerMoves.map((pm, index) => {
+        {/* Consistency */}
+        <div className='bg-white p-6 rounded-xl border border-stone-200/60 shadow-sm'>
+          <div className='flex items-center justify-between mb-2'>
+            <p className='text-xs font-bold text-stone-500 uppercase tracking-wide'>Consistency</p>
+          </div>
+          <p className='text-3xl font-black text-emerald-600'>92%</p>
+          <p className='text-xs text-stone-500 mt-2 font-semibold'>Great consistency</p>
+        </div>
+
+        {/* Targets On Pace */}
+        <div className='bg-white p-6 rounded-xl border border-stone-200/60 shadow-sm'>
+          <div className='flex items-center justify-between mb-2'>
+            <p className='text-xs font-bold text-stone-500 uppercase tracking-wide'>Targets On Pace</p>
+          </div>
+          <p className='text-3xl font-black text-amber-600'>2 / 3</p>
+          <p className='text-xs text-stone-500 mt-2 font-semibold'>On track</p>
+        </div>
+
+        {/* Execution Trend */}
+        <div className='bg-white p-6 rounded-xl border border-stone-200/60 shadow-sm'>
+          <div className='flex items-center justify-between mb-2'>
+            <p className='text-xs font-bold text-stone-500 uppercase tracking-wide'>Execution Trend</p>
+          </div>
+          <p className='text-3xl font-black text-blue-600'>Rising</p>
+          <p className='text-xs text-stone-500 mt-2 font-semibold'>Last 7 days</p>
+        </div>
+      </div>
+
+      {/* POWER MOVES SECTION - Horizontal Cards Grid */}
+      <div>
+        <div className='flex items-center justify-between mb-4'>
+          <div>
+            <h2 className='text-lg font-black uppercase tracking-wide text-stone-900'>Power Moves</h2>
+            <p className='text-xs text-stone-500 mt-1'>Lead Measures - Recurring Actions</p>
+          </div>
+          <p className='text-sm font-semibold text-stone-600'>
+            {myPowerMoves.length} active
+          </p>
+        </div>
+
+        {myPowerMoves.length === 0 ? (
+          <div className='bg-white p-8 rounded-xl border border-stone-200/60 text-center'>
+            <p className='text-sm text-stone-500'>No power moves yet for this period.</p>
+          </div>
+        ) : (
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4'>
+            {myPowerMoves.map((pm, index) => {
               const { target, actual } = getTargetActualForPeriod(pm, selectedPeriod)
               const percentage = target > 0 ? Math.round((actual / target) * 100) : 0
               const isCompleted = actual >= target
               const isPrimary = index < 2
 
+              // Color icons based on index
+              const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-purple-500', 'bg-red-500', 'bg-cyan-500']
+              const bgColor = colors[index % colors.length]
+
               return (
                 <div
                   key={pm.id}
-                  className='px-6 py-4 hover:bg-stone-50/50 transition-colors'
+                  className='bg-white rounded-xl border border-stone-200/60 shadow-sm p-5 hover:shadow-md transition-all flex flex-col'
                 >
-                  <div className='flex items-center justify-between gap-4 mb-3'>
-                    <div className='flex-1 min-w-0'>
-                      <div className='flex items-center gap-2'>
-                        <h4 className='text-sm font-bold text-stone-900 truncate'>{pm.name}</h4>
-                        {isPrimary && (
-                          <span className='inline-flex text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-700 whitespace-nowrap'>
-                            Primary
-                          </span>
-                        )}
-                      </div>
-                      <p className='text-xs text-stone-500 mt-1'>{pm.brand}</p>
+                  {/* Icon and Header */}
+                  <div className='flex items-start justify-between mb-4'>
+                    <div className={cn('h-10 w-10 rounded-lg flex items-center justify-center text-white font-bold text-lg', bgColor)}>
+                      {pm.name?.[0]?.toUpperCase() || '○'}
                     </div>
-                    <div className='flex items-center gap-4'>
-                      <div className='text-right'>
-                        <p className='text-sm font-bold text-stone-900'>{actual}/{target}</p>
-                        <p className='text-xs text-stone-500'>{pm.frequency}</p>
-                      </div>
-                      <Button
-                        size='sm'
-                        onClick={() => handleCompletePowerMove(pm.id)}
-                        disabled={isCompleted}
-                        className={cn(
-                          'text-xs font-bold',
-                          isCompleted
-                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                        )}
-                      >
-                        {isCompleted ? '✓ Done' : 'Complete'}
-                      </Button>
-                    </div>
+                    {isPrimary && (
+                      <span className='text-xs font-bold px-2 py-1 bg-amber-100 text-amber-700 rounded'>
+                        Primary
+                      </span>
+                    )}
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className='mt-3'>
-                    <div className='flex justify-between items-center mb-2'>
-                      <span className='text-xs font-semibold text-stone-600'>Progress</span>
+                  {/* Title and Frequency */}
+                  <h3 className='text-sm font-bold text-stone-900 mb-1 line-clamp-2'>{pm.name}</h3>
+                  <p className='text-xs text-stone-500 font-semibold mb-3'>{pm.frequency}</p>
+
+                  {/* Progress */}
+                  <div className='mb-4'>
+                    <div className='flex justify-between items-center mb-1'>
+                      <span className='text-xs font-semibold text-stone-600'>{actual}/{target}</span>
                       <span className={cn(
-                        'text-xs font-bold px-2 py-1 rounded-full',
-                        isCompleted
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : percentage > 0
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-stone-200 text-stone-700'
+                        'text-xs font-bold px-2 py-0.5 rounded-full',
+                        isCompleted ? 'bg-emerald-100 text-emerald-700' : percentage > 0 ? 'bg-amber-100 text-amber-700' : 'bg-stone-200 text-stone-700'
                       )}>
-                        {isCompleted ? 'Completed' : percentage > 0 ? 'In Progress' : 'Not Started'}
+                        {percentage}%
                       </span>
                     </div>
-                    <div className='h-2 bg-stone-200 rounded-full overflow-hidden'>
+                    <div className='h-1.5 bg-stone-200 rounded-full overflow-hidden'>
                       <div
                         className={cn(
                           'h-full transition-all duration-500',
@@ -600,17 +624,32 @@ export function IndividualDashboard({
                       />
                     </div>
                   </div>
+
+                  {/* Action Button */}
+                  <Button
+                    size='sm'
+                    onClick={() => handleCompletePowerMove(pm.id)}
+                    disabled={isCompleted}
+                    className={cn(
+                      'w-full text-xs font-bold mt-auto',
+                      isCompleted
+                        ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 cursor-not-allowed'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    )}
+                  >
+                    {isCompleted ? '✓ Done' : 'Complete'}
+                  </Button>
                 </div>
               )
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
 
       {/* TASKS AND COMMITMENTS - Collapsible Sections */}
       <div className='space-y-4'>
         {/* Tasks Section */}
-        <Collapsible defaultOpen className='bg-white rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden'>
+        <Collapsible defaultOpen={false} className='bg-white rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden'>
           <div className='px-6 py-4 border-b border-stone-200/60 bg-stone-50'>
             <CollapsibleTrigger className='w-full flex items-center justify-between hover:opacity-75 transition-opacity'>
               <div className='flex items-center gap-3'>
@@ -620,7 +659,12 @@ export function IndividualDashboard({
                   <p className='text-xs text-stone-500 mt-0.5'>One-Time Activities</p>
                 </div>
               </div>
-              <ChevronDown className='h-4 w-4 text-stone-500' />
+              <div className='flex items-center gap-3'>
+                <span className='text-sm font-bold text-stone-600'>
+                  {tasks.filter(t => !t.completed).length} pending
+                </span>
+                <ChevronDown className='h-4 w-4 text-stone-500' />
+              </div>
             </CollapsibleTrigger>
           </div>
           <CollapsibleContent className='divide-y divide-stone-200/60'>
@@ -628,7 +672,7 @@ export function IndividualDashboard({
               <p className='px-6 py-4 text-sm text-stone-500'>No tasks for this period</p>
             ) : (
               tasks.map((task) => (
-                <div key={task.id} className='px-6 py-4 flex items-center gap-3 hover:bg-stone-50/50'>
+                <div key={task.id} className='px-6 py-4 flex items-center gap-3 hover:bg-stone-50/50 transition-colors'>
                   <Checkbox
                     checked={task.completed}
                     onCheckedChange={() => toggleTask(task.id)}
@@ -654,7 +698,7 @@ export function IndividualDashboard({
         </Collapsible>
 
         {/* Commitments Section */}
-        <Collapsible defaultOpen className='bg-white rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden'>
+        <Collapsible defaultOpen={false} className='bg-white rounded-2xl shadow-sm border border-stone-200/60 overflow-hidden'>
           <div className='px-6 py-4 border-b border-stone-200/60 bg-stone-50'>
             <CollapsibleTrigger className='w-full flex items-center justify-between hover:opacity-75 transition-opacity'>
               <div className='flex items-center gap-3'>
@@ -664,7 +708,12 @@ export function IndividualDashboard({
                   <p className='text-xs text-stone-500 mt-0.5'>Team Promises</p>
                 </div>
               </div>
-              <ChevronDown className='h-4 w-4 text-stone-500' />
+              <div className='flex items-center gap-3'>
+                <span className='text-sm font-bold text-stone-600'>
+                  {commitments.filter(c => !c.completed).length} active
+                </span>
+                <ChevronDown className='h-4 w-4 text-stone-500' />
+              </div>
             </CollapsibleTrigger>
           </div>
           <CollapsibleContent className='divide-y divide-stone-200/60'>
@@ -672,7 +721,7 @@ export function IndividualDashboard({
               <p className='px-6 py-4 text-sm text-stone-500'>No commitments for this period</p>
             ) : (
               commitments.map((commitment) => (
-                <div key={commitment.id} className='px-6 py-4 flex items-center gap-3 hover:bg-stone-50/50'>
+                <div key={commitment.id} className='px-6 py-4 flex items-center gap-3 hover:bg-stone-50/50 transition-colors'>
                   <Checkbox
                     checked={commitment.completed}
                     onCheckedChange={() => toggleCommitment(commitment.id)}

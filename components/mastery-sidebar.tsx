@@ -61,19 +61,14 @@ export function MasterySidebar({ defaultCollapsed = false }: MasterySidebarProps
   const router = useRouter()
 
 
-  console.log("[MasterySidebar] currentUser=", currentUser);
   const currentUserRole = currentUser?.role ?? ""
   
-  console.log("[MasterySidebar] currentUserRole=", currentUserRole);
   const normalizedCurrentUserRole = currentUserRole.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
   const isAdmin =
     normalizedCurrentUserRole === "super_admin" ||
     normalizedCurrentUserRole === "superadmin" ||
     normalizedCurrentUserRole === "company_admin" ||
     normalizedCurrentUserRole === "companyadmin"
-
-  // debug logging for admin detection and currentUser
-  console.log("[MasterySidebar] role=", currentUserRole, "normalized=", normalizedCurrentUserRole, "isAdmin=", isAdmin)
 
   const departmentKeyMap: Record<string, Department> = {
     marketing: "marketing",
@@ -92,7 +87,6 @@ export function MasterySidebar({ defaultCollapsed = false }: MasterySidebarProps
           const allowed = new Set(currentUser.assignments.map((assignment) => assignment.department))
           return allowed.has(departmentKeyMap[item.key])
         })
-    console.log("[MasterySidebar] visible nav items:", nav.map(i => i.key))
     return nav
   }, [currentUser, isAdmin])
 
