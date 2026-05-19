@@ -96,6 +96,7 @@ export interface DepartmentConfig {
     title: string
     description: string
   }
+  users?: Array<{ name: string; role: string }>
 }
 
 interface DepartmentPageProps {
@@ -254,27 +255,32 @@ export function DepartmentPage({ config, departmentKey }: DepartmentPageProps) {
     ]
   }
 
-  const teamMembers = [
-    {
-      name: "Sarah M.",
-      role: "Marketing Lead",
-      commitments: [
-        { id: "1", title: "Call 10 potential clients", status: "completed" as const, dueDay: "Mon" },
-        { id: "2", title: "Update website copy", status: "in-progress" as const, dueDay: "Wed" },
-        { id: "3", title: "Send email campaign", status: "pending" as const, dueDay: "Fri" },
-      ],
-      weeklyScore: 8.5,
-    },
-    {
-      name: "John D.",
-      role: "Content Strategist",
-      commitments: [
-        { id: "4", title: "Write 3 blog posts", status: "completed" as const, dueDay: "Tue" },
-        { id: "5", title: "Create social media calendar", status: "completed" as const, dueDay: "Thu" },
-      ],
-      weeklyScore: 9.0,
-    },
-  ]
+  const teamMembers = config.users && config.users.length > 0 
+    ? config.users.map(user => ({
+        name: user.name,
+        role: user.role,
+      }))
+    : [
+        {
+          name: "Sarah M.",
+          role: "Marketing Lead",
+          commitments: [
+            { id: "1", title: "Call 10 potential clients", status: "completed" as const, dueDay: "Mon" },
+            { id: "2", title: "Update website copy", status: "in-progress" as const, dueDay: "Wed" },
+            { id: "3", title: "Send email campaign", status: "pending" as const, dueDay: "Fri" },
+          ],
+          weeklyScore: 8.5,
+        },
+        {
+          name: "John D.",
+          role: "Content Strategist",
+          commitments: [
+            { id: "4", title: "Write 3 blog posts", status: "completed" as const, dueDay: "Tue" },
+            { id: "5", title: "Create social media calendar", status: "completed" as const, dueDay: "Thu" },
+          ],
+          weeklyScore: 9.0,
+        },
+      ]
 
   const teamMembersWithCommitments = teamMembers.map((member) => ({
     ...member,

@@ -37,6 +37,7 @@ export default function MarketingPage() {
     wig: brandConfig.companyWIG.goal,
     status: "on-track",
     coreObjective: departmentData?.coreObjective,
+    users: departmentData?.teamMembers?.map(tm => ({ name: tm.name, role: tm.role })) ?? [],
     victoryTargets:
       victoryTargetsLoading || victoryTargetsError
         ? []

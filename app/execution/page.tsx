@@ -4,10 +4,12 @@ import { AppShell } from "@/components/app-shell"
 import { DepartmentPage, type DepartmentConfig } from "@/components/department-page"
 import { DepartmentPageSkeleton } from "@/components/skeleton-loader"
 import { Cog } from "lucide-react"
+import { useBrandDepartment } from "@/lib/use-brand-department"
 import { useDepartmentPowerMoves } from "@/lib/use-department-power-moves"
 import { useDepartmentVictoryTargets } from "@/lib/use-department-victory-targets"
 
 export default function ExecutionPage() {
+  const departmentData = useBrandDepartment("execution")
   const {
     victoryTargets: departmentVictoryTargets,
     isLoading: victoryTargetsLoading,
@@ -36,6 +38,7 @@ export default function ExecutionPage() {
       title: "Accountability & Cadence",
       description: "Ensure commitments are tracked, bottlenecks removed, execution is visible",
     },
+    users: departmentData?.teamMembers?.map(tm => ({ name: tm.name, role: tm.role })) ?? [],
     victoryTargets:
       victoryTargetsLoading || victoryTargetsError
         ? []

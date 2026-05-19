@@ -4,10 +4,12 @@ import { AppShell } from "@/components/app-shell"
 import { DepartmentPage, type DepartmentConfig } from "@/components/department-page"
 import { DepartmentPageSkeleton } from "@/components/skeleton-loader"
 import { Crown } from "lucide-react"
+import { useBrandDepartment } from "@/lib/use-brand-department"
 import { useDepartmentPowerMoves } from "@/lib/use-department-power-moves"
 import { useDepartmentVictoryTargets } from "@/lib/use-department-victory-targets"
 
 export default function LeadershipPage() {
+  const departmentData = useBrandDepartment("leadership")
   const {
     victoryTargets: departmentVictoryTargets,
     isLoading: victoryTargetsLoading,
@@ -36,6 +38,7 @@ export default function LeadershipPage() {
       title: "Strategy Management, Functional Management Systems & People Management Systems",
       description: "Set direction, remove friction, develop leaders, sustain execution",
     },
+    users: departmentData?.teamMembers?.map(tm => ({ name: tm.name, role: tm.role })) ?? [],
     victoryTargets:
       victoryTargetsLoading || victoryTargetsError
         ? []
