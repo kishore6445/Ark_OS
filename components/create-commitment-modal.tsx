@@ -17,6 +17,7 @@ interface CreateCommitmentModalProps {
   onOpenChange: (open: boolean) => void
   powerMoves?: Array<{ id: string; name: string }>
   victoryTargets?: Array<{ id: string; title: string }>
+  teamMembers?: Array<{ name: string; role: string }>
   onSave?: () => void
 }
 
@@ -25,6 +26,7 @@ export function CreateCommitmentModal({
   onOpenChange,
   powerMoves = [],
   victoryTargets = [],
+  teamMembers = [],
   onSave,
 }: CreateCommitmentModalProps) {
   const { toast } = useToast()
@@ -184,8 +186,25 @@ export function CreateCommitmentModal({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="owner">Owner *</Label>
+            <div className="space-y-2">
+              <Label htmlFor="owner">Owner *</Label>
+              {teamMembers.length > 0 ? (
+                <Select value={owner} onValueChange={(value) => {
+                  setOwner(value)
+                  validateField("owner", value)
+                }}>
+                  <SelectTrigger id="owner" className={errors.owner ? "border-red-500 focus-visible:ring-red-500" : ""}>
+                    <SelectValue placeholder="Select team member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teamMembers.map((member) => (
+                      <SelectItem key={member.name} value={member.name}>
+                        {member.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
                 <Input
                   id="owner"
                   placeholder="Who's responsible?"
@@ -197,8 +216,9 @@ export function CreateCommitmentModal({
                   onBlur={() => validateField("owner", owner)}
                   className={errors.owner ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
-                {errors.owner && <p className="text-sm text-red-600">{errors.owner}</p>}
-              </div>
+              )}
+              {errors.owner && <p className="text-sm text-red-600">{errors.owner}</p>}
+            </div>
 
               <div className="space-y-2">
                 <Label htmlFor="due-day">Due Day *</Label>

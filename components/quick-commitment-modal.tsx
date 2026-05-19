@@ -19,9 +19,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface QuickCommitmentModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  teamMembers?: Array<{ name: string; role: string }>
 }
 
-export function QuickCommitmentModal({ open, onOpenChange }: QuickCommitmentModalProps) {
+export function QuickCommitmentModal({ open, onOpenChange, teamMembers = [] }: QuickCommitmentModalProps) {
   const [formData, setFormData] = useState({
     title: "",
     owner: "",
@@ -76,18 +77,28 @@ export function QuickCommitmentModal({ open, onOpenChange }: QuickCommitmentModa
                   <SelectValue placeholder="Select team member" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sarah-m">Sarah M.</SelectItem>
-                  <SelectItem value="john-d">John D.</SelectItem>
-                  <SelectItem value="emily-r">Emily R.</SelectItem>
-                  <SelectItem value="amit-p">Amit P.</SelectItem>
-                  <SelectItem value="neha-m">Neha M.</SelectItem>
-                  <SelectItem value="priya-k">Priya K.</SelectItem>
-                  <SelectItem value="rahul-s">Rahul S.</SelectItem>
-                  <SelectItem value="ravi-t">Ravi T.</SelectItem>
-                  <SelectItem value="lisa-w">Lisa W.</SelectItem>
-                  <SelectItem value="mike-r">Mike R.</SelectItem>
-                  <SelectItem value="james-l">James L.</SelectItem>
-                  <SelectItem value="anna-k">Anna K.</SelectItem>
+                  {teamMembers.length > 0 ? (
+                    teamMembers.map((member) => (
+                      <SelectItem key={member.name} value={member.name}>
+                        {member.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="sarah-m">Sarah M.</SelectItem>
+                      <SelectItem value="john-d">John D.</SelectItem>
+                      <SelectItem value="emily-r">Emily R.</SelectItem>
+                      <SelectItem value="amit-p">Amit P.</SelectItem>
+                      <SelectItem value="neha-m">Neha M.</SelectItem>
+                      <SelectItem value="priya-k">Priya K.</SelectItem>
+                      <SelectItem value="rahul-s">Rahul S.</SelectItem>
+                      <SelectItem value="ravi-t">Ravi T.</SelectItem>
+                      <SelectItem value="lisa-w">Lisa W.</SelectItem>
+                      <SelectItem value="mike-r">Mike R.</SelectItem>
+                      <SelectItem value="james-l">James L.</SelectItem>
+                      <SelectItem value="anna-k">Anna K.</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>

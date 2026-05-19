@@ -497,11 +497,10 @@ export function DepartmentPage({ config, departmentKey }: DepartmentPageProps) {
       <CreateCommitmentModal
         open={showCommitmentModal}
         onOpenChange={setShowCommitmentModal}
-        onSuccess={() => setShowCommitmentModal(false)}
+        onSave={() => setShowCommitmentModal(false)}
         powerMoves={filteredPowerMoves}
         victoryTargets={filteredVictoryTargets}
-        addAnother={addAnotherCommitment}
-        setAddAnother={setAddAnotherCommitment}
+        teamMembers={teamMembers}
       />
     </PageTransition>
   )
