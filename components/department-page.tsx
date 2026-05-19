@@ -465,6 +465,7 @@ export function DepartmentPage({ config, departmentKey }: DepartmentPageProps) {
         selectedQuarter={selectedQuarter}
         onQuarterChange={setSelectedQuarter}
         coreObjective={config.coreObjective}
+        teamMembers={teamMembers}
       />
 
       {/* COMPANY GOAL CONTEXT STRIP (MOVED TO BOTTOM) - Thin, non-interactive, reduced emphasis */}
