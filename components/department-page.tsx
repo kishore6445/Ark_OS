@@ -486,6 +486,7 @@ export function DepartmentPage({ config, departmentKey }: DepartmentPageProps) {
         open={showTaskModal}
         onOpenChange={setShowTaskModal}
         onSave={() => setShowTaskModal(false)}
+        teamMembers={teamMembers}
       />
       <CreateCommitmentModal
         open={showCommitmentModal}

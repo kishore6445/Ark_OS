@@ -16,9 +16,10 @@ interface CreateTaskModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSave?: () => void
+  teamMembers?: Array<{ name: string; role: string }>
 }
 
-export function CreateTaskModal({ open, onOpenChange, onSave }: CreateTaskModalProps) {
+export function CreateTaskModal({ open, onOpenChange, onSave, teamMembers = [] }: CreateTaskModalProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -152,17 +153,35 @@ export function CreateTaskModal({ open, onOpenChange, onSave }: CreateTaskModalP
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="task-owner">Owner *</Label>
-              <Input
-                id="task-owner"
-                placeholder="Who's responsible?"
-                value={owner}
-                onChange={(e) => {
-                  setOwner(e.target.value)
-                  validateField("owner", e.target.value)
-                }}
-                onBlur={() => validateField("owner", owner)}
-                className={errors.owner ? "border-red-500 focus-visible:ring-red-500" : ""}
-              />
+              {teamMembers.length > 0 ? (
+                <Select value={owner} onValueChange={(value) => {
+                  setOwner(value)
+                  validateField("owner", value)
+                }}>
+                  <SelectTrigger id="task-owner" className={errors.owner ? "border-red-500 focus-visible:ring-red-500" : ""}>
+                    <SelectValue placeholder="Select team member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teamMembers.map((member) => (
+                      <SelectItem key={member.name} value={member.name}>
+                        {member.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="task-owner"
+                  placeholder="Who's responsible?"
+                  value={owner}
+                  onChange={(e) => {
+                    setOwner(e.target.value)
+                    validateField("owner", e.target.value)
+                  }}
+                  onBlur={() => validateField("owner", owner)}
+                  className={errors.owner ? "border-red-500 focus-visible:ring-red-500" : ""}
+                />
+              )}
               {errors.owner && <p className="text-sm text-red-600">{errors.owner}</p>}
             </div>
 
